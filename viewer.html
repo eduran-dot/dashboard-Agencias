@@ -1,0 +1,2134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Análisis de Agencias</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --bg:#0f1117;--bg2:#171b24;--bg3:#1e2330;--bg4:#252b3a;
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.13);
+  --text:#f0f2f7;--text2:#8b92a8;--text3:#555d73;
+  --blue:#4a9eff;--blue-bg:rgba(74,158,255,.1);
+  --green:#3ecf8e;--green-bg:rgba(62,207,142,.1);
+  --red:#f46060;--red-bg:rgba(244,96,96,.1);
+  --amber:#f5a623;--amber-bg:rgba(245,166,35,.1);
+  --purple:#a78bfa;--purple-bg:rgba(167,139,250,.1);
+  --natura:#e05d2b;--natura-bg:rgba(224,93,43,.12);--natura-light:#f47d52;
+  --shein:#18c0a0;--shein-bg:rgba(24,192,160,.12);--shein-light:#3dd9bb;
+  --radius:10px;--radius-lg:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh}
+.sidebar{position:fixed;top:0;left:0;width:224px;height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100}
+.logo{padding:22px 20px 18px;border-bottom:1px solid var(--border)}
+.logo-icon{width:36px;height:36px;background:var(--blue);border-radius:9px;display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+.logo-icon svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.logo h1{font-size:15px;font-weight:600;letter-spacing:-.3px}
+.logo p{font-size:11px;color:var(--text3);margin-top:2px}
+.brands-badge{display:flex;gap:6px;margin-top:10px}
+.brand-pill{font-size:10px;font-weight:500;padding:2px 8px;border-radius:99px}
+.brand-pill.natura{background:var(--natura-bg);color:var(--natura-light);border:1px solid rgba(224,93,43,.25)}
+.brand-pill.shein{background:var(--shein-bg);color:var(--shein-light);border:1px solid rgba(24,192,160,.25)}
+.nav{padding:14px 10px;flex:1}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:400;transition:all .15s;margin-bottom:2px}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:var(--blue-bg);color:var(--blue);font-weight:500}
+.sidebar-footer{padding:14px 16px;border-top:1px solid var(--border)}
+.sb-row{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:4px}
+.sb-row span{color:var(--text2);font-family:'DM Mono',monospace}
+.main{margin-left:224px;min-height:100vh}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.page-title{font-size:15px;font-weight:600}
+.topbar-date{font-size:12px;color:var(--text3);font-family:'DM Mono',monospace}
+.content{padding:28px}
+.view{display:none}.view.active{display:block}
+
+/* Brand tabs */
+.brand-tabs{display:flex;gap:6px;margin-bottom:20px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:6px;width:fit-content}
+.brand-tab{padding:7px 20px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);border:none;background:transparent;font-family:'DM Sans',sans-serif;transition:all .15s;display:flex;align-items:center;gap:7px}
+.brand-tab:hover{color:var(--text);background:var(--bg3)}
+.brand-tab.all.active{background:var(--blue-bg);color:var(--blue)}
+.brand-tab.natura.active{background:var(--natura-bg);color:var(--natura-light)}
+.brand-tab.shein.active{background:var(--shein-bg);color:var(--shein-light)}
+.brand-dot{width:8px;height:8px;border-radius:50%}
+.brand-dot.natura{background:var(--natura)}
+.brand-dot.shein{background:var(--shein)}
+.brand-dot.all{background:var(--blue)}
+
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.kpi-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;position:relative;overflow:hidden;transition:border-color .2s}
+.kpi-card:hover{border-color:var(--border2)}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:var(--radius-lg) var(--radius-lg) 0 0}
+.kpi-card.blue::before{background:var(--blue)}.kpi-card.green::before{background:var(--green)}
+.kpi-card.red::before{background:var(--red)}.kpi-card.amber::before{background:var(--amber)}
+.kpi-card.purple::before{background:var(--purple)}
+.kpi-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.kpi-label svg{width:12px;height:12px;flex-shrink:0}
+.kpi-value{font-size:26px;font-weight:600;letter-spacing:-1px;font-variant-numeric:tabular-nums;line-height:1}
+.kpi-card.blue .kpi-value{color:var(--blue)}.kpi-card.green .kpi-value{color:var(--green)}
+.kpi-card.red .kpi-value{color:var(--red)}.kpi-card.amber .kpi-value{color:var(--amber)}
+.kpi-card.purple .kpi-value{color:var(--purple)}
+.kpi-split{display:flex;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+.kpi-split-item{flex:1;text-align:center}
+.kpi-split-label{font-size:10px;color:var(--text3);margin-bottom:2px}
+.kpi-split-val{font-size:13px;font-weight:500;font-family:'DM Mono',monospace}
+.kpi-split-val.natura{color:var(--natura-light)}.kpi-split-val.shein{color:var(--shein-light)}
+
+/* Filters */
+.filters-bar{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 16px;margin-bottom:18px;display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.filter-group{display:flex;flex-direction:column;gap:4px}
+.filter-group label{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3)}
+.filters-bar input[type=date],.filters-bar select,.filters-bar input[type=text]{background:var(--bg3);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 10px;outline:none;transition:border-color .15s}
+.filters-bar input:focus,.filters-bar select:focus{border-color:var(--blue)}
+.filters-bar select option{background:var(--bg3)}
+.btn-ghost{background:transparent;border:1px solid var(--border2);border-radius:7px;color:var(--text2);font-size:12px;padding:6px 12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;display:flex;align-items:center;gap:6px}
+.btn-ghost:hover{border-color:var(--blue);color:var(--blue)}
+.btn-ghost svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* Charts */
+.charts-row{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:20px}
+.chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px}
+.chart-title{font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.legend{display:flex;gap:12px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3)}
+.legend-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+
+/* Brand comparison row */
+.brand-compare{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.brand-card{border-radius:var(--radius-lg);padding:18px;border:1px solid}
+.brand-card.natura{background:var(--natura-bg);border-color:rgba(224,93,43,.25)}
+.brand-card.shein{background:var(--shein-bg);border-color:rgba(24,192,160,.25)}
+.brand-card-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.brand-card-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+.brand-card.natura .brand-card-icon{background:rgba(224,93,43,.25);color:var(--natura-light)}
+.brand-card.shein .brand-card-icon{background:rgba(24,192,160,.25);color:var(--shein-light)}
+.brand-card-name{font-size:14px;font-weight:600}
+.brand-card.natura .brand-card-name{color:var(--natura-light)}
+.brand-card.shein .brand-card-name{color:var(--shein-light)}
+.brand-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.brand-stat{background:rgba(0,0,0,.2);border-radius:8px;padding:10px 12px}
+.brand-stat-label{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);margin-bottom:4px}
+.brand-stat-val{font-size:18px;font-weight:600;font-family:'DM Mono',monospace}
+.brand-card.natura .brand-stat-val{color:var(--natura-light)}
+.brand-card.shein .brand-stat-val{color:var(--shein-light)}
+
+/* Table */
+.table-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:20px}
+.table-card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.table-card-title{font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.06em}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead th{padding:10px 14px;text-align:left;font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap}
+tbody td{padding:12px 14px;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr{transition:background .12s}
+tbody tr:hover{background:var(--bg3)}
+.mono{font-family:'DM Mono',monospace;font-size:12px;font-variant-numeric:tabular-nums}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:500;font-family:'DM Mono',monospace}
+.badge-blue{background:var(--blue-bg);color:var(--blue)}
+.badge-green{background:var(--green-bg);color:var(--green)}
+.badge-red{background:var(--red-bg);color:var(--red)}
+.badge-amber{background:var(--amber-bg);color:var(--amber)}
+.badge-natura{background:var(--natura-bg);color:var(--natura-light)}
+.badge-shein{background:var(--shein-bg);color:var(--shein-light)}
+.progress-wrap{width:100%;background:var(--bg4);border-radius:99px;height:4px;margin-top:4px}
+.progress-bar{height:4px;border-radius:99px;transition:width .3s}
+.row-btn{background:none;border:none;color:var(--text3);cursor:pointer;padding:4px 7px;border-radius:6px;transition:all .12s}
+.row-btn:hover{background:var(--bg4);color:var(--text)}
+.row-btn svg{width:14px;height:14px;display:block;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* Form */
+.form-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:16px}
+.form-card-title{font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.form-grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:10px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
+.form-group input,.form-group select{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 11px;outline:none;transition:border-color .15s;width:100%}
+.form-group input:focus,.form-group select:focus{border-color:var(--blue)}
+.form-group select option{background:var(--bg3)}
+.brand-selector{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
+.brand-option{border:1px solid var(--border2);border-radius:9px;padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--text2);transition:all .15s;background:transparent}
+.brand-option:hover{border-color:var(--border2);background:var(--bg3)}
+.brand-option.selected.all{border-color:var(--blue);background:var(--blue-bg);color:var(--blue)}
+.brand-option.selected.natura{border-color:rgba(224,93,43,.5);background:var(--natura-bg);color:var(--natura-light)}
+.brand-option.selected.shein{border-color:rgba(24,192,160,.5);background:var(--shein-bg);color:var(--shein-light)}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.btn-primary{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .15s}
+.btn-primary:hover{opacity:.85}
+.btn-secondary{background:var(--bg3);color:var(--text2);border:1px solid var(--border2);border-radius:8px;padding:9px 16px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.btn-secondary:hover{color:var(--text);background:var(--bg4)}
+.btn-danger{background:var(--red-bg);color:var(--red);border:1px solid rgba(244,96,96,.2);border-radius:8px;padding:9px 16px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .15s}
+.btn-danger:hover{opacity:.8}
+
+/* Upload */
+.upload-zone{border:1.5px dashed var(--border2);border-radius:var(--radius-lg);padding:32px 20px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:14px}
+.upload-zone:hover{border-color:var(--blue);background:var(--blue-bg)}
+.upload-zone svg{width:30px;height:30px;stroke:var(--text3);margin-bottom:10px;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.upload-zone p{font-size:13px;color:var(--text2)}
+.upload-zone small{font-size:11px;color:var(--text3);margin-top:4px;display:block}
+.upload-zone input{display:none}
+
+/* Alert */
+.alert{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.alert svg{width:14px;height:14px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.alert-ok{background:var(--green-bg);color:var(--green);border:1px solid rgba(62,207,142,.2)}
+.alert-err{background:var(--red-bg);color:var(--red);border:1px solid rgba(244,96,96,.2)}
+.alert-info{background:var(--blue-bg);color:var(--blue);border:1px solid rgba(74,158,255,.2)}
+
+/* Monthly */
+.month-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.month-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px}
+.month-card-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.month-brand-rows{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.month-brand-block{border-radius:8px;padding:10px 12px}
+.month-brand-block.natura{background:var(--natura-bg)}
+.month-brand-block.shein{background:var(--shein-bg)}
+.month-brand-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.month-brand-block.natura .month-brand-label{color:var(--natura-light)}
+.month-brand-block.shein .month-brand-label{color:var(--shein-light)}
+.month-row{display:flex;justify-content:space-between;font-size:11px;padding:2px 0}
+.month-row-label{color:var(--text3)}
+.month-row-val{font-family:'DM Mono',monospace;color:var(--text2)}
+.month-total-row{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-top:1px solid var(--border)}
+.month-total-label{color:var(--text2);font-weight:500}
+.month-total-val{font-family:'DM Mono',monospace;font-weight:600;color:var(--text)}
+.progress-wrap{width:100%;background:var(--bg4);border-radius:99px;height:4px;margin-top:8px}
+.progress-bar{height:4px;border-radius:99px}
+
+/* Confirm */
+.confirm-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:center;justify-content:center}
+.confirm-overlay.open{display:flex}
+.confirm-box{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:26px;max-width:340px;width:90%}
+.confirm-box h3{font-size:15px;font-weight:600;margin-bottom:8px}
+.confirm-box p{font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.6}
+.confirm-box .btn-row{justify-content:flex-end}
+.empty{text-align:center;padding:36px;color:var(--text3);font-size:13px}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:99px}
+</style>
+
+<style>
+#nav-registro, #nav-importar,
+#view-registro, #view-importar,
+#view-agencias .form-card:first-of-type,
+.btn-primary, .btn-secondary, .btn-danger,
+.upload-zone, #ruta-form-card,
+#btn-cancel-ag, #btn-cancel-reg,
+#confirm-overlay, #edit-modal,
+#reg-tbody td:last-child,
+#ag-tbody td:last-child,
+#view-registro thead th:last-child,
+#view-agencias thead th:last-child { display: none !important; }
+</style>
+
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+    <h1>Agencias</h1>
+    <p>Panel de control</p>
+    <div class="brands-badge">
+      <span class="brand-pill natura">Natura</span>
+      <span class="brand-pill shein">Shein</span>
+    </div>
+  </div>
+  <nav class="nav">
+    <div class="nav-item active" onclick="switchView('dashboard')" id="nav-dashboard">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard
+    </div>
+    <div class="nav-item" onclick="switchView('dagencias')" id="nav-dagencias">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Dashboard de agencias
+    </div>
+    <div class="nav-item" onclick="switchView('agencias')" id="nav-agencias">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Agencias
+    </div>
+    <div class="nav-item" onclick="switchView('registro')" id="nav-registro">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Registro
+    </div>
+    <div class="nav-item" onclick="switchView('inventario')" id="nav-inventario">
+      <svg viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 3H8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z"/></svg>Inventario LPN
+    </div>
+    <div class="nav-item" onclick="switchView('pagos')" id="nav-pagos">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+      Pagos a agencias
+    </div>
+    <div class="nav-item" onclick="switchView('mensual')" id="nav-mensual">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Resumen mensual
+    </div>
+    <div class="nav-item" onclick="switchView('importar')" id="nav-importar">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Importar
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="sb-row">Agencias<span id="sb-ag">0</span></div>
+    <div class="sb-row">Registros<span id="sb-reg">0</span></div>
+    <div class="sb-row" style="margin-top:6px">Natura pkgs<span id="sb-natura" style="color:var(--natura-light)">0</span></div>
+    <div class="sb-row">Shein pkgs<span id="sb-shein" style="color:var(--shein-light)">0</span></div>
+    <div class="sb-row" style="margin-top:6px">LPN total<span id="sb-lpn" style="color:var(--purple)">0</span></div>
+  </div>
+</aside>
+
+<main class="main">
+    <div style="background:var(--blue-bg);border-bottom:1px solid rgba(74,158,255,.3);padding:8px 28px;display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--blue);position:sticky;top:0;z-index:200">
+    <span>👁 <strong>Modo solo lectura</strong> — Dashboard en tiempo real</span>
+    <span id="last-sync" style="color:var(--text3)">Conectando...</span>
+  </div>
+  <div class="topbar">
+    <span class="page-title" id="page-title">Dashboard</span>
+    <span class="topbar-date" id="topbar-date"></span>
+  </div>
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="view active" id="view-dashboard">
+
+      <!-- Filtros dashboard -->
+      <div class="filters-bar" style="margin-bottom:20px">
+          <div class="filter-group">
+            <label style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3)">Agencia</label>
+            <select id="f-ag" onchange="renderDashboard()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 10px;outline:none"><option value="">Todas</option></select>
+          </div>
+          <div class="filter-group">
+            <label style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3)">Desde</label>
+            <input type="date" id="f-desde" onchange="renderDashboard()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 10px;outline:none">
+          </div>
+          <div class="filter-group">
+            <label style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3)">Hasta</label>
+            <input type="date" id="f-hasta" onchange="renderDashboard()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 10px;outline:none">
+          </div>
+          <div class="filter-group">
+            <label style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3)">Mes rápido</label>
+            <select id="f-mes" onchange="aplicarMes()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 10px;outline:none"><option value="">— Mes —</option></select>
+          </div>
+          <button class="btn-ghost" onclick="limpiarFiltrosDash()"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Limpiar</button>
+      </div>
+
+      <div class="kpi-grid" id="kpi-grid"></div>
+
+      <!-- Brand compare -->
+      <div class="brand-compare" id="brand-compare"></div>
+
+      <!-- Gráfica de tendencias -->
+      <div class="chart-card" style="margin-bottom:20px">
+        <div class="chart-title">Tendencia de paquetes por fecha</div>
+        <div style="position:relative;height:220px"><canvas id="chart-tendencia" role="img" aria-label="Tendencia Natura vs Shein"></canvas></div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD DE AGENCIAS -->
+    <div class="view" id="view-dagencias">
+
+      <div class="filters-bar">
+        <div class="filter-group"><label>Agencia</label><select id="da-ag" onchange="renderDashAgencias()"><option value="">Todas</option></select></div>
+        <div class="filter-group"><label>Marca</label>
+          <select id="da-marca" onchange="renderDashAgencias()">
+            <option value="">Todas</option><option value="natura">Natura</option><option value="shein">Shein</option>
+          </select>
+        </div>
+        <div class="filter-group"><label>Desde</label><input type="date" id="da-desde" onchange="renderDashAgencias()"></div>
+        <div class="filter-group"><label>Hasta</label><input type="date" id="da-hasta" onchange="renderDashAgencias()"></div>
+        <div class="filter-group"><label>Mes rápido</label><select id="da-mes" onchange="aplicarMesDA()"><option value="">— Mes —</option></select></div>
+        <button class="btn-ghost" onclick="limpiarFiltrosDA()"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Limpiar</button>
+      </div>
+
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-title">Paquetes por agencia
+            <div class="legend">
+              <div class="legend-item"><div class="legend-dot" style="background:rgba(74,158,255,.9)"></div>Enviados</div>
+              <div class="legend-item"><div class="legend-dot" style="background:rgba(62,207,142,.9)"></div>Entregados</div>
+              <div class="legend-item"><div class="legend-dot" style="background:rgba(74,158,255,.4);outline:1px dashed rgba(74,158,255,.6)"></div>Shein env</div>
+              <div class="legend-item"><div class="legend-dot" style="background:rgba(62,207,142,.4);outline:1px dashed rgba(62,207,142,.6)"></div>Shein ent</div>
+            </div>
+          </div>
+          <div style="position:relative;height:190px"><canvas id="chart-bar" role="img" aria-label="Paquetes por agencia"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Distribución
+            <div class="legend">
+              <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>Reparto</div>
+              <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Entregados</div>
+              <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Pendientes</div>
+            </div>
+          </div>
+          <div style="position:relative;height:190px"><canvas id="chart-dona" role="img" aria-label="Distribución global"></canvas></div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-card-header">
+          <span class="table-card-title">Resumen por agencia</span>
+          <span id="dash-periodo" style="font-size:11px;color:var(--text3)"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Agencia</th><th>Marca</th><th>Enviados</th><th>En reparto</th><th>Entregados</th><th>Pendientes</th><th>Tasa</th></tr></thead>
+            <tbody id="dash-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- AGENCIAS -->
+    <div class="view" id="view-agencias">
+      <div id="msg-agencias"></div>
+      <div class="form-card">
+        <div class="form-card-title" id="form-ag-title">Nueva agencia</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Nombre</label><input id="ag-nombre" type="text" placeholder="Ej. Agencia Norte"></div>
+          <div class="form-group"><label>Zona / descripción</label><input id="ag-zona" type="text" placeholder="Ej. Colonia Providencia"></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn-primary" onclick="guardarAgencia()">Guardar</button>
+          <button class="btn-secondary" id="btn-cancel-ag" style="display:none" onclick="cancelarAg()">Cancelar</button>
+        </div>
+      </div>
+      <div class="table-card">
+        <div class="table-card-header"><span class="table-card-title">Agencias registradas</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nombre</th><th>Zona</th><th>Natura — enviados</th><th>Natura — entregados</th><th>Shein — enviados</th><th>Shein — entregados</th><th>Tasa global</th><th>Acciones</th></tr></thead>
+            <tbody id="ag-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- REGISTRO -->
+    <div class="view" id="view-registro">
+      <div id="msg-registro"></div>
+      <div class="form-card">
+        <div class="form-card-title" id="form-reg-title">Nuevo registro</div>
+        <div class="form-grid" style="margin-bottom:14px">
+          <div class="form-group"><label>Agencia</label><select id="reg-ag"><option value="">— Selecciona —</option></select></div>
+          <div class="form-group"><label>Fecha</label><input type="date" id="reg-fecha"></div>
+        </div>
+
+        <!-- Natura -->
+        <div style="background:var(--natura-bg);border:1px solid rgba(224,93,43,.25);border-radius:10px;padding:14px;margin-bottom:12px">
+          <div style="font-size:11px;font-weight:600;color:var(--natura-light);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;display:flex;align-items:center;gap:6px">
+            <div class="brand-dot natura"></div>Natura
+          </div>
+          <div class="form-grid-4">
+            <div class="form-group"><label>Enviados</label><input type="number" id="reg-nat-env" min="0" value="0"></div>
+            <div class="form-group"><label>En reparto</label><input type="number" id="reg-nat-rep" min="0" value="0"></div>
+            <div class="form-group"><label>Entregados</label><input type="number" id="reg-nat-ent" min="0" value="0"></div>
+            <div class="form-group"><label>Pendientes</label><input type="number" id="reg-nat-fal" min="0" value="0"></div>
+          </div>
+        </div>
+
+        <!-- Shein -->
+        <div style="background:var(--shein-bg);border:1px solid rgba(24,192,160,.25);border-radius:10px;padding:14px;margin-bottom:14px">
+          <div style="font-size:11px;font-weight:600;color:var(--shein-light);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;display:flex;align-items:center;gap:6px">
+            <div class="brand-dot shein"></div>Shein
+          </div>
+          <div class="form-grid-4">
+            <div class="form-group"><label>Enviados</label><input type="number" id="reg-sh-env" min="0" value="0"></div>
+            <div class="form-group"><label>En reparto</label><input type="number" id="reg-sh-rep" min="0" value="0"></div>
+            <div class="form-group"><label>Entregados</label><input type="number" id="reg-sh-ent" min="0" value="0"></div>
+            <div class="form-group"><label>Pendientes</label><input type="number" id="reg-sh-fal" min="0" value="0"></div>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn-primary" onclick="guardarRegistro()">Guardar registro</button>
+          <button class="btn-secondary" id="btn-cancel-reg" style="display:none" onclick="cancelarReg()">Cancelar</button>
+        </div>
+      </div>
+
+      <div class="filters-bar" style="margin-bottom:14px">
+        <div class="filter-group"><label>Agencia</label><select id="rf-ag" onchange="renderRegistros()"><option value="">Todas</option></select></div>
+        <div class="filter-group"><label>Marca</label>
+          <select id="rf-marca" onchange="renderRegistros()">
+            <option value="">Todas</option>
+            <option value="natura">Natura</option>
+            <option value="shein">Shein</option>
+          </select>
+        </div>
+        <div class="filter-group"><label>Desde</label><input type="date" id="rf-desde" onchange="renderRegistros()"></div>
+        <div class="filter-group"><label>Hasta</label><input type="date" id="rf-hasta" onchange="renderRegistros()"></div>
+        <button class="btn-ghost" onclick="limpiarFiltrosReg()"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Limpiar</button>
+      </div>
+      <div class="table-card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Agencia</th><th>Marca</th><th>Fecha</th><th>Enviados</th><th>Reparto</th><th>Entregados</th><th>Pendientes</th><th>Acciones</th></tr></thead>
+            <tbody id="reg-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- INVENTARIO LPN -->
+    <div class="view" id="view-inventario">
+
+      <!-- KPIs -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px" id="inv-kpi"></div>
+
+      <!-- Filtros -->
+      <div class="filters-bar" style="margin-bottom:18px">
+        <div class="filter-group"><label>Agencia</label>
+          <select id="inv-ag" onchange="renderInventario()"
+            style="background:var(--bg3);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 10px;outline:none">
+            <option value="">Todas</option>
+          </select>
+        </div>
+        <div class="filter-group"><label>Marca</label>
+          <select id="inv-marca" onchange="renderInventario()"
+            style="background:var(--bg3);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 10px;outline:none">
+            <option value="">Todas</option>
+            <option value="shein">Shein</option>
+            <option value="natura">Natura</option>
+          </select>
+        </div>
+        <div class="filter-group"><label>Desde</label>
+          <input type="date" id="inv-desde" onchange="renderInventario()"
+            style="background:var(--bg3);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 10px;outline:none">
+        </div>
+        <div class="filter-group"><label>Hasta</label>
+          <input type="date" id="inv-hasta" onchange="renderInventario()"
+            style="background:var(--bg3);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 10px;outline:none">
+        </div>
+        <div class="filter-group"><label>Buscar LPN</label>
+          <input type="text" id="inv-buscar" placeholder="Ej. C26051..." oninput="renderInventario()"
+            style="background:var(--bg3);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 10px;outline:none;width:180px">
+        </div>
+        <div class="filter-group"><label>Mes rápido</label>
+          <select id="inv-mes" onchange="aplicarMesInv()"
+            style="background:var(--bg3);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 10px;outline:none">
+            <option value="">— Mes —</option>
+          </select>
+        </div>
+        <button class="btn-ghost" onclick="limpiarFiltrosInv()">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Limpiar
+        </button>
+      </div>
+
+      <!-- Tabla agrupada por fecha/agencia -->
+      <div id="inv-grupos"></div>
+    </div>
+
+    <!-- PAGOS -->
+    <div class="view" id="view-pagos">
+
+      <!-- Tarifas editables -->
+      <div class="form-card" style="margin-bottom:18px">
+        <div class="form-card-title">Tarifas por paquete entregado</div>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end">
+          <div class="form-group">
+            <label style="color:var(--natura-light)">Natura — $ por paquete</label>
+            <input type="number" id="tarifa-natura" value="12" min="0" step="0.5"
+              style="width:140px" oninput="renderPagos()">
+          </div>
+          <div class="form-group">
+            <label style="color:var(--shein-light)">Shein — $ por paquete</label>
+            <input type="number" id="tarifa-shein" value="9" min="0" step="0.5"
+              style="width:140px" oninput="renderPagos()">
+          </div>
+          <div class="filter-group">
+            <label>Agencia</label>
+            <select id="p-ag" onchange="renderPagos()"
+              style="background:var(--bg3);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 10px;outline:none">
+              <option value="">Todas</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Desde</label>
+            <input type="date" id="p-desde" onchange="renderPagos()"
+              style="background:var(--bg3);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 10px;outline:none">
+          </div>
+          <div class="filter-group">
+            <label>Hasta</label>
+            <input type="date" id="p-hasta" onchange="renderPagos()"
+              style="background:var(--bg3);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 10px;outline:none">
+          </div>
+          <div class="filter-group">
+            <label>Mes rápido</label>
+            <select id="p-mes" onchange="aplicarMesPagos()"
+              style="background:var(--bg3);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 10px;outline:none">
+              <option value="">— Mes —</option>
+            </select>
+          </div>
+          <button class="btn-ghost" onclick="limpiarFiltrosPagos()">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Limpiar
+          </button>
+        </div>
+      </div>
+
+      <!-- KPIs de pago -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px" id="pagos-kpi"></div>
+
+      <!-- Tabla por agencia -->
+      <div class="table-card">
+        <div class="table-card-header">
+          <span class="table-card-title">Desglose por agencia</span>
+          <span id="pagos-periodo" style="font-size:11px;color:var(--text3)"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Agencia</th>
+                <th>Natura entregados</th>
+                <th>Shein entregados</th>
+                <th style="color:var(--natura-light)">Pago Natura</th>
+                <th style="color:var(--shein-light)">Pago Shein</th>
+                <th style="color:var(--green)">Total a pagar</th>
+              </tr>
+            </thead>
+            <tbody id="pagos-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Gráfica de pagos -->
+      <div class="chart-card">
+        <div class="chart-title">Total a pagar por agencia
+          <div class="legend">
+            <div class="legend-item"><div class="legend-dot" style="background:var(--natura)"></div>Natura</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--shein)"></div>Shein</div>
+          </div>
+        </div>
+        <div style="position:relative;height:220px">
+          <canvas id="chart-pagos" role="img" aria-label="Pagos por agencia"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- MENSUAL -->
+    <div class="view" id="view-mensual">
+      <div class="filters-bar" style="margin-bottom:20px">
+        <div class="filter-group"><label>Mes</label><select id="m-mes" onchange="renderMensual()"><option value="">Todos</option></select></div>
+        <div class="filter-group"><label>Agencia</label><select id="m-ag" onchange="renderMensual()"><option value="">Todas</option></select></div>
+      </div>
+      <div class="month-grid" id="month-grid"></div>
+    </div>
+
+    <!-- IMPORTAR -->
+    <div class="view" id="view-importar">
+      <div id="msg-import"></div>
+
+      <!-- Tabs importar -->
+      <div style="display:flex;gap:6px;margin-bottom:18px">
+        <button class="brand-tab all active" id="itab-ruta" onclick="switchImportTab('ruta')">📦 Excel de ruta (el que te mandan)</button>
+        <button class="brand-tab all" id="itab-status" onclick="switchImportTab('status')">🔄 Actualizar estatus LPN</button>
+        <button class="brand-tab all" id="itab-manual" onclick="switchImportTab('manual')">📋 Plantilla manual</button>
+      </div>
+
+      <!-- ===== MODO ACTUALIZAR ESTATUS ===== -->
+      <div id="iview-status" style="display:none">
+        <div class="form-card">
+          <div class="form-card-title">Actualizar estatus de LPN</div>
+          <p style="font-size:13px;color:var(--text2);margin-bottom:8px;line-height:1.7">
+            Sube tu reporte con la columna <code style="background:var(--bg3);padding:1px 7px;border-radius:5px;font-family:'DM Mono',monospace;font-size:12px;color:var(--blue)">ESTATUS</code> y el sistema actualiza automáticamente cada LPN ya registrado.<br>
+            <span style="font-size:12px;color:var(--text3)">
+              El archivo debe tener columnas: <strong style="color:var(--text2)">Ruta · FECHA · LPN · ESTATUS</strong>
+            </span>
+          </p>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;background:var(--bg3);border-radius:10px;padding:12px;margin-bottom:14px;font-size:12px">
+            <div><div style="color:var(--green);font-weight:600;margin-bottom:3px">✓ Entregado</div><div style="color:var(--text3);font-family:'DM Mono',monospace;font-size:11px">delivery_successful</div></div>
+            <div><div style="color:var(--amber);font-weight:600;margin-bottom:3px">🚚 En ruta</div><div style="color:var(--text3);font-family:'DM Mono',monospace;font-size:11px">order_out_for_delivery</div></div>
+            <div><div style="color:var(--blue);font-weight:600;margin-bottom:3px">⏳ Pendiente</div><div style="color:var(--text3);font-family:'DM Mono',monospace;font-size:11px">cualquier otro estatus</div></div>
+          </div>
+          <div class="upload-zone" onclick="document.getElementById('file-status').click()">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <p>Haz clic para subir tu reporte de estatus</p>
+            <small>Acepta .xlsx, .xls y .csv</small>
+            <input type="file" id="file-status" accept=".xlsx,.xls,.csv" onchange="handleStatusFile(this)">
+          </div>
+          <div id="status-preview"></div>
+        </div>
+      </div>
+
+      <!-- ===== MODO RUTA ===== -->
+      <div id="iview-ruta">
+        <div class="form-card">
+          <div class="form-card-title">Importar Excel de ruta</div>
+          <p style="font-size:13px;color:var(--text2);margin-bottom:6px;line-height:1.7">
+            Sube el archivo tal como te lo mandan. El sistema detectará automáticamente:<br>
+            <span style="color:var(--text3);font-size:12px">
+              · El nombre de la agencia (fila "Ruta:")<br>
+              · La fecha del envío (fila "FECHA")<br>
+              · Los LPN: <span style="color:var(--shein-light)">empieza con "c" → Shein</span> &nbsp;|&nbsp; <span style="color:var(--natura-light)">cualquier otro → Natura</span>
+            </span>
+          </p>
+          <p style="font-size:12px;color:var(--text3);margin-bottom:14px">Después podrás capturar cuántos salieron a reparto, se entregaron y fallaron.</p>
+          <div class="upload-zone" onclick="document.getElementById('file-ruta').click()">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <p>Haz clic para subir el Excel de ruta</p>
+            <small>Acepta .xlsx y .xls</small>
+            <input type="file" id="file-ruta" accept=".xlsx,.xls" onchange="handleRutaFile(this)">
+          </div>
+          <div id="ruta-preview"></div>
+        </div>
+
+        <!-- Formulario complemento (oculto hasta leer archivo) -->
+        <div class="form-card" id="ruta-form-card" style="display:none">
+          <div class="form-card-title">Completa los datos de entrega</div>
+          <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px" id="ruta-resumen-detected"></div>
+          <p style="font-size:12px;color:var(--text3);margin-bottom:14px">Ahora ingresa los datos que te informaron por grupo:</p>
+
+          <!-- Natura -->
+          <div id="ruta-natura-section">
+            <div style="font-size:11px;font-weight:600;color:var(--natura-light);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;display:flex;align-items:center;gap:6px"><div class="brand-dot natura"></div>Natura</div>
+            <div class="form-grid-4" style="margin-bottom:14px">
+              <div class="form-group"><label>Enviados</label><input type="number" id="rn-env" min="0" value="0" readonly style="opacity:.6;cursor:not-allowed"></div>
+              <div class="form-group"><label>En reparto</label><input type="number" id="rn-rep" min="0" value="0"></div>
+              <div class="form-group"><label>Entregados</label><input type="number" id="rn-ent" min="0" value="0"></div>
+              <div class="form-group"><label>Pendientes</label><input type="number" id="rn-fal" min="0" value="0"></div>
+            </div>
+          </div>
+
+          <!-- Shein -->
+          <div id="ruta-shein-section">
+            <div style="font-size:11px;font-weight:600;color:var(--shein-light);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;display:flex;align-items:center;gap:6px"><div class="brand-dot shein"></div>Shein</div>
+            <div class="form-grid-4" style="margin-bottom:14px">
+              <div class="form-group"><label>Enviados</label><input type="number" id="rs-env" min="0" value="0" readonly style="opacity:.6;cursor:not-allowed"></div>
+              <div class="form-group"><label>En reparto</label><input type="number" id="rs-rep" min="0" value="0"></div>
+              <div class="form-group"><label>Entregados</label><input type="number" id="rs-ent" min="0" value="0"></div>
+              <div class="form-group"><label>Pendientes</label><input type="number" id="rs-fal" min="0" value="0"></div>
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn-primary" onclick="guardarDesdeRuta()">Guardar registro</button>
+            <button class="btn-secondary" onclick="cancelarRuta()">Cancelar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== MODO MANUAL ===== -->
+      <div id="iview-manual" style="display:none">
+        <div class="form-card">
+          <div class="form-card-title">Importar desde plantilla manual</div>
+          <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.7">
+            El archivo debe tener estas columnas en la primera fila:<br>
+            <code style="background:var(--bg3);padding:2px 8px;border-radius:5px;font-family:'DM Mono',monospace;font-size:12px;color:var(--blue)">agencia · marca · enviados · reparto · entregados · fallidos</code><br>
+            <span style="font-size:12px;color:var(--text3)">La columna <strong style="color:var(--text2)">marca</strong> debe decir <strong style="color:var(--natura-light)">natura</strong> o <strong style="color:var(--shein-light)">shein</strong>.</span>
+          </p>
+          <div class="upload-zone" onclick="document.getElementById('file-in').click()">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <p>Haz clic para seleccionar tu archivo</p>
+            <small>Acepta .xlsx, .xls y .csv</small>
+            <input type="file" id="file-in" accept=".xlsx,.xls,.csv" onchange="handleFile(this)">
+          </div>
+          <div id="preview-area"></div>
+        </div>
+        <div class="form-card">
+          <div class="form-card-title">Formato esperado</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>agencia</th><th>marca</th><th>enviados</th><th>reparto</th><th>entregados</th><th>pendientes</th></tr></thead>
+              <tbody>
+                <tr><td>Agencia Norte</td><td><span class="badge badge-natura">natura</span></td><td class="mono">120</td><td class="mono">15</td><td class="mono">95</td><td class="mono">10</td></tr>
+                <tr><td>Agencia Norte</td><td><span class="badge badge-shein">shein</span></td><td class="mono">80</td><td class="mono">10</td><td class="mono">65</td><td class="mono">5</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- Modal edición combinada (Natura + Shein mismo día/agencia) -->
+<div class="confirm-overlay" id="edit-modal">
+  <div class="confirm-box" style="max-width:520px;width:95%">
+    <h3 style="margin-bottom:4px">Editar registro</h3>
+    <p id="edit-modal-sub" style="font-size:12px;color:var(--text2);margin-bottom:16px"></p>
+    <!-- Natura -->
+    <div style="background:var(--natura-bg);border:1px solid rgba(224,93,43,.25);border-radius:10px;padding:14px;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:600;color:var(--natura-light);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;display:flex;align-items:center;gap:6px">
+        <div class="brand-dot natura"></div>Natura
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px">
+        <div class="form-group"><label>Enviados</label><input type="number" id="em-nat-env" min="0" value="0"></div>
+        <div class="form-group"><label>En reparto</label><input type="number" id="em-nat-rep" min="0" value="0"></div>
+        <div class="form-group"><label>Entregados</label><input type="number" id="em-nat-ent" min="0" value="0"></div>
+        <div class="form-group"><label>Pendientes</label><input type="number" id="em-nat-fal" min="0" value="0"></div>
+      </div>
+    </div>
+    <!-- Shein -->
+    <div style="background:var(--shein-bg);border:1px solid rgba(24,192,160,.25);border-radius:10px;padding:14px;margin-bottom:16px">
+      <div style="font-size:11px;font-weight:600;color:var(--shein-light);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;display:flex;align-items:center;gap:6px">
+        <div class="brand-dot shein"></div>Shein
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px">
+        <div class="form-group"><label>Enviados</label><input type="number" id="em-sh-env" min="0" value="0"></div>
+        <div class="form-group"><label>En reparto</label><input type="number" id="em-sh-rep" min="0" value="0"></div>
+        <div class="form-group"><label>Entregados</label><input type="number" id="em-sh-ent" min="0" value="0"></div>
+        <div class="form-group"><label>Pendientes</label><input type="number" id="em-sh-fal" min="0" value="0"></div>
+      </div>
+    </div>
+    <div class="btn-row" style="justify-content:flex-end">
+      <button class="btn-secondary" onclick="closeEditModal()">Cancelar</button>
+      <button class="btn-primary" onclick="guardarEditCombinado()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <h3 id="confirm-title">¿Confirmar?</h3>
+    <p id="confirm-msg"></p>
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="closeConfirm()">Cancelar</button>
+      <button class="btn-danger" id="confirm-ok">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────
+let agencias=[], registros=[], lpns=[];
+let editAgId=null, editRegId=null;
+let chartBar=null, chartDona=null, chartTendencia=null;
+let dashBrand='all'; // 'all' | 'natura' | 'shein'
+let regBrand='natura';
+
+const BRANDS = {
+  natura: { label:'Natura', color:'var(--natura-light)', bg:'var(--natura-bg)', badgeCls:'badge-natura' },
+  shein:  { label:'Shein',  color:'var(--shein-light)',  bg:'var(--shein-bg)',  badgeCls:'badge-shein'  },
+};
+
+// ── Configuración de sincronización ───────────────────────────────────
+// Cambia esta URL por la de tu Render.com y el token que pusiste en render.yaml
+const SYNC_URL   = 'https://dashboard-agencias.onrender.com/api/data';
+const SYNC_TOKEN = 'movicarga2026';
+
+function save(){
+  try{localStorage.setItem('ag_agencias',JSON.stringify(agencias));}catch(e){}
+  try{localStorage.setItem('ag_registros',JSON.stringify(registros));}catch(e){}
+  try{localStorage.setItem('ag_lpns',JSON.stringify(lpns));}catch(e){}
+  syncToCloud();
+}
+
+async function syncToCloud(){
+  if(!SYNC_URL || SYNC_URL.includes('TU-APP')) return;
+  try{
+    await fetch(SYNC_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Auth-Token':SYNC_TOKEN},
+      body: JSON.stringify({agencias, registros, lpns})
+    });
+  } catch(e){ /* silencioso */ }
+}
+function load(){
+  try{const d=localStorage.getItem('ag_agencias');if(d)agencias=JSON.parse(d);}catch(e){agencias=[];}
+  try{const d=localStorage.getItem('ag_registros');if(d)registros=JSON.parse(d);}catch(e){registros=[];}
+  try{const d=localStorage.getItem('ag_lpns');if(d)lpns=JSON.parse(d);}catch(e){lpns=[];}
+  if(!agencias.length){
+    agencias=[{id:'ag1',nombre:'Agencia Norte',zona:'Zona norte'},{id:'ag2',nombre:'Agencia Sur',zona:'Zona sur'},{id:'ag3',nombre:'Agencia Centro',zona:'Centro'}];
+    save();
+  }
+}
+
+// Cargar datos desde el servidor al arrancar
+async function loadFromServer(){
+  if(!SYNC_URL || SYNC_URL.includes('TU-APP')) return;
+  try{
+    const res = await fetch(SYNC_URL.replace('/api/data','') + '/api/data');
+    if(!res.ok) return;
+    const data = await res.json();
+    if(data.agencias && data.agencias.length){
+      agencias  = data.agencias;
+      registros = data.registros || [];
+      lpns      = data.lpns      || [];
+      // Guardar en localStorage también
+      try{localStorage.setItem('ag_agencias', JSON.stringify(agencias));}catch(e){}
+      try{localStorage.setItem('ag_registros', JSON.stringify(registros));}catch(e){}
+      try{localStorage.setItem('ag_lpns', JSON.stringify(lpns));}catch(e){}
+    }
+  }catch(e){ /* silencioso */ }
+  populateDashSelects();
+  populateDASelects();
+  populateRegSelects();
+  populatePagosSelects();
+  populateInvSelects();
+  updateSidebar();
+  renderDashboard();
+}
+function uid(){return 'id'+Date.now()+Math.floor(Math.random()*9999);}
+function tasa(e,n){return e>0?Math.round(n/e*100):0;}
+
+// ── Views ──────────────────────────────────────────────────────────────
+function switchView(v){
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  document.getElementById('nav-'+v).classList.add('active');
+  document.getElementById('page-title').textContent={dashboard:'Dashboard',dagencias:'Dashboard de agencias',agencias:'Agencias',registro:'Registro de paquetes',inventario:'Inventario LPN',pagos:'Pagos a agencias',mensual:'Resumen mensual',importar:'Importar'}[v]||v;
+  if(v==='dashboard'){populateDashSelects();renderDashboard();}
+  if(v==='dagencias'){populateDASelects();renderDashAgencias();}
+  if(v==='agencias')renderAgencias();
+  if(v==='registro'){populateRegSelects();renderRegistros();}
+  if(v==='inventario'){populateInvSelects();renderInventario();}
+  if(v==='pagos'){populatePagosSelects();renderPagos();}
+  if(v==='mensual'){populateMensualSelects();renderMensual();}
+}
+
+// ── Brand filter ───────────────────────────────────────────────────────
+function setBrandFilter(b){
+  dashBrand='all'; // siempre all — tabs removidos
+  renderDashboard();
+}
+
+// ── Resumen helper ─────────────────────────────────────────────────────
+function getResumen(agId, desde, hasta, brand){
+  return agencias.map(ag=>{
+    let regs=registros.filter(r=>r.agenciaId===ag.id);
+    if(agId) regs=regs.filter(r=>r.agenciaId===agId);
+    if(desde) regs=regs.filter(r=>r.fecha>=desde);
+    if(hasta) regs=regs.filter(r=>r.fecha<=hasta);
+    if(brand&&brand!=='all') regs=regs.filter(r=>r.marca===brand);
+    const natRegs=regs.filter(r=>r.marca==='natura');
+    const sheinRegs=regs.filter(r=>r.marca==='shein');
+    const sum=arr=>({
+      env:arr.reduce((s,r)=>s+(+r.enviados||0),0),
+      rep:arr.reduce((s,r)=>s+(+r.reparto||0),0),
+      ent:arr.reduce((s,r)=>s+(+r.entregados||0),0),
+      fal:arr.reduce((s,r)=>s+(+r.fallidos||0),0),
+    });
+    const tot=sum(regs), nat=sum(natRegs), sh=sum(sheinRegs);
+    return {id:ag.id,nombre:ag.nombre,tot,nat,sh};
+  }).filter(r=>agId?r.id===agId:true);
+}
+
+// ── Dashboard ──────────────────────────────────────────────────────────
+function renderDashboard(){
+  const agId=document.getElementById('f-ag').value;
+  const desde=document.getElementById('f-desde').value;
+  const hasta=document.getElementById('f-hasta').value;
+  const brand=dashBrand;
+
+  const resumen=getResumen(agId,desde,hasta,brand);
+
+  // totals
+  const tot=resumen.reduce((s,r)=>({
+    env:s.env+r.tot.env,rep:s.rep+r.tot.rep,
+    ent:s.ent+r.tot.ent,fal:s.fal+r.tot.fal
+  }),{env:0,rep:0,ent:0,fal:0});
+  const natTot=resumen.reduce((s,r)=>({env:s.env+r.nat.env,ent:s.ent+r.nat.ent}),{env:0,ent:0});
+  const shTot=resumen.reduce((s,r)=>({env:s.env+r.sh.env,ent:s.ent+r.sh.ent}),{env:0,ent:0});
+  const t=tasa(tot.env,tot.ent);
+
+  // KPI split only when brand = all
+  const split=brand==='all'?`
+    <div class="kpi-split">
+      <div class="kpi-split-item"><div class="kpi-split-label">Natura</div><div class="kpi-split-val natura">${natTot.env.toLocaleString('es-MX')}</div></div>
+      <div class="kpi-split-item"><div class="kpi-split-label">Shein</div><div class="kpi-split-val shein">${shTot.env.toLocaleString('es-MX')}</div></div>
+    </div>`:'';
+
+  document.getElementById('kpi-grid').innerHTML=`
+    <div class="kpi-card blue"><div class="kpi-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/></svg>Enviados</div><div class="kpi-value">${tot.env.toLocaleString('es-MX')}</div>${split}</div>
+    <div class="kpi-card amber"><div class="kpi-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13" rx="1"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>En reparto</div><div class="kpi-value">${tot.rep.toLocaleString('es-MX')}</div></div>
+    <div class="kpi-card green"><div class="kpi-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Entregados</div><div class="kpi-value">${tot.ent.toLocaleString('es-MX')}</div></div>
+    <div class="kpi-card red"><div class="kpi-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>Pendientes</div><div class="kpi-value">${tot.fal.toLocaleString('es-MX')}</div></div>
+    <div class="kpi-card purple"><div class="kpi-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Tasa éxito</div><div class="kpi-value">${t}%</div></div>
+  `;
+
+  // Brand compare cards (solo en "Todas")
+  const bc=document.getElementById('brand-compare');
+  if(brand==='all'){
+    const natT=tasa(natTot.env,natTot.ent);
+    const shT=tasa(shTot.env,shTot.ent);
+    const natFal=resumen.reduce((s,r)=>s+r.nat.fal,0);
+    const shFal=resumen.reduce((s,r)=>s+r.sh.fal,0);
+    const natRep=resumen.reduce((s,r)=>s+r.nat.rep,0);
+    const shRep=resumen.reduce((s,r)=>s+r.sh.rep,0);
+    bc.innerHTML=`
+      <div class="brand-card natura">
+        <div class="brand-card-header"><div class="brand-card-icon">N</div><div class="brand-card-name">Natura</div></div>
+        <div class="brand-stat-grid">
+          <div class="brand-stat"><div class="brand-stat-label">Enviados</div><div class="brand-stat-val">${natTot.env.toLocaleString('es-MX')}</div></div>
+          <div class="brand-stat"><div class="brand-stat-label">Entregados</div><div class="brand-stat-val">${natTot.ent.toLocaleString('es-MX')}</div></div>
+          <div class="brand-stat"><div class="brand-stat-label">En reparto</div><div class="brand-stat-val">${natRep.toLocaleString('es-MX')}</div></div>
+          <div class="brand-stat"><div class="brand-stat-label">Pendientes</div><div class="brand-stat-val">${natFal.toLocaleString('es-MX')}</div></div>
+        </div>
+        <div class="progress-wrap" style="margin-top:12px"><div class="progress-bar" style="width:${natT}%;background:var(--natura)"></div></div>
+        <div style="font-size:11px;color:var(--text3);margin-top:5px">Tasa de éxito: <strong style="color:var(--natura-light)">${natT}%</strong></div>
+      </div>
+      <div class="brand-card shein">
+        <div class="brand-card-header"><div class="brand-card-icon">S</div><div class="brand-card-name">Shein</div></div>
+        <div class="brand-stat-grid">
+          <div class="brand-stat"><div class="brand-stat-label">Enviados</div><div class="brand-stat-val">${shTot.env.toLocaleString('es-MX')}</div></div>
+          <div class="brand-stat"><div class="brand-stat-label">Entregados</div><div class="brand-stat-val">${shTot.ent.toLocaleString('es-MX')}</div></div>
+          <div class="brand-stat"><div class="brand-stat-label">En reparto</div><div class="brand-stat-val">${shRep.toLocaleString('es-MX')}</div></div>
+          <div class="brand-stat"><div class="brand-stat-label">Pendientes</div><div class="brand-stat-val">${shFal.toLocaleString('es-MX')}</div></div>
+        </div>
+        <div class="progress-wrap" style="margin-top:12px"><div class="progress-bar" style="width:${shT}%;background:var(--shein)"></div></div>
+        <div style="font-size:11px;color:var(--text3);margin-top:5px">Tasa de éxito: <strong style="color:var(--shein-light)">${shT}%</strong></div>
+      </div>`;
+  } else {
+    bc.innerHTML='';
+  }
+
+  // Periodo label
+  if(desde||hasta){
+    document.getElementById('dash-periodo').textContent=(desde?'Desde '+desde:'')+(desde&&hasta?' — ':'')+(hasta?'Hasta '+hasta:'');
+  } else { document.getElementById('dash-periodo').textContent='Todos los periodos'; }
+
+  // Table
+  const tbody=document.getElementById('dash-tbody');
+  const rows=[];
+  resumen.forEach(r=>{
+    if(brand==='all'||brand==='natura'){
+      if(r.nat.env>0||brand==='natura'){
+        const t2=tasa(r.nat.env,r.nat.ent);
+        const bc2=t2>=80?'var(--green)':t2>=60?'var(--amber)':'var(--red)';
+        rows.push(`<tr>
+          <td style="font-weight:500">${r.nombre}</td>
+          <td><span class="badge badge-natura">Natura</span></td>
+          <td><span class="badge badge-blue mono">${r.nat.env}</span></td>
+          <td class="mono" style="color:var(--text2)">${r.nat.rep}</td>
+          <td class="mono" style="color:var(--green)">${r.nat.ent}</td>
+          <td class="mono" style="color:var(--red)">${r.nat.fal}</td>
+          <td><span class="badge ${t2>=80?'badge-green':t2>=60?'badge-amber':'badge-red'}">${t2}%</span><div class="progress-wrap"><div class="progress-bar" style="width:${t2}%;background:${bc2}"></div></div></td>
+        </tr>`);
+      }
+    }
+    if(brand==='all'||brand==='shein'){
+      if(r.sh.env>0||brand==='shein'){
+        const t2=tasa(r.sh.env,r.sh.ent);
+        const bc2=t2>=80?'var(--green)':t2>=60?'var(--amber)':'var(--red)';
+        rows.push(`<tr>
+          <td style="font-weight:500">${r.nombre}</td>
+          <td><span class="badge badge-shein">Shein</span></td>
+          <td><span class="badge badge-blue mono">${r.sh.env}</span></td>
+          <td class="mono" style="color:var(--text2)">${r.sh.rep}</td>
+          <td class="mono" style="color:var(--green)">${r.sh.ent}</td>
+          <td class="mono" style="color:var(--red)">${r.sh.fal}</td>
+          <td><span class="badge ${t2>=80?'badge-green':t2>=60?'badge-amber':'badge-red'}">${t2}%</span><div class="progress-wrap"><div class="progress-bar" style="width:${t2}%;background:${bc2}"></div></div></td>
+        </tr>`);
+      }
+    }
+  });
+  tbody.innerHTML=rows.length?rows.join(''):'<tr><td colspan="7" class="empty">Sin datos para los filtros seleccionados</td></tr>';
+
+  renderCharts(resumen, tot, 'all');
+  renderTendencia(agId, desde, hasta);
+  updateSidebar();
+}
+
+function renderCharts(resumen, tot, brand){
+  if(chartBar)chartBar.destroy();
+  if(chartDona)chartDona.destroy();
+
+  const labels=resumen.map(r=>r.nombre.replace('Agencia ',''));
+  let datasets=[];
+
+  if(brand==='all'||brand==='natura'){
+    datasets.push({label:'Natura — Enviados',   data:resumen.map(r=>r.nat.env),backgroundColor:'rgba(74,158,255,.9)', borderRadius:4,borderSkipped:false});
+    datasets.push({label:'Natura — Entregados', data:resumen.map(r=>r.nat.ent),backgroundColor:'rgba(62,207,142,.9)', borderRadius:4,borderSkipped:false});
+  }
+  if(brand==='all'||brand==='shein'){
+    datasets.push({label:'Shein — Enviados',    data:resumen.map(r=>r.sh.env), backgroundColor:'rgba(74,158,255,.4)', borderRadius:4,borderSkipped:false});
+    datasets.push({label:'Shein — Entregados',  data:resumen.map(r=>r.sh.ent), backgroundColor:'rgba(62,207,142,.4)', borderRadius:4,borderSkipped:false});
+  }
+  if(!datasets.length){
+    datasets=[
+      {label:'Enviados',   data:resumen.map(r=>r.tot.env),backgroundColor:'rgba(74,158,255,.9)',borderRadius:4,borderSkipped:false},
+      {label:'Entregados', data:resumen.map(r=>r.tot.ent),backgroundColor:'rgba(62,207,142,.9)',borderRadius:4,borderSkipped:false},
+      {label:'Pendientes', data:resumen.map(r=>r.tot.fal),backgroundColor:'rgba(244,96,96,.7)', borderRadius:4,borderSkipped:false},
+    ];
+  }
+
+  chartBar=new Chart(document.getElementById('chart-bar'),{
+    type:'bar',data:{labels,datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{
+          title: ctx=>[ctx[0].label],
+          label: ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y}`
+        }}
+      },
+      scales:{
+        x:{ticks:{color:'#555d73',font:{size:11},autoSkip:false},grid:{color:'rgba(255,255,255,.04)'}},
+        y:{ticks:{color:'#555d73',font:{size:11}},grid:{color:'rgba(255,255,255,.04)'}}
+      }
+    }
+  });
+
+  chartDona=new Chart(document.getElementById('chart-dona'),{
+    type:'doughnut',
+    data:{labels:['En reparto','Entregados','Pendientes'],datasets:[{data:[tot.rep,tot.ent,tot.fal],backgroundColor:['rgba(245,166,35,.8)','rgba(62,207,142,.8)','rgba(244,96,96,.8)'],borderWidth:0,hoverOffset:4}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false}}}
+  });
+}
+
+function populateDashSelects(){
+  const sel=document.getElementById('f-ag'); const cur=sel.value;
+  sel.innerHTML='<option value="">Todas</option>'+agencias.map(a=>`<option value="${a.id}"${a.id===cur?' selected':''}>${a.nombre}</option>`).join('');
+  const meses=[...new Set(registros.map(r=>r.fecha.slice(0,7)))].sort().reverse();
+  const msel=document.getElementById('f-mes'); const mc=msel.value;
+  msel.innerHTML='<option value="">— Mes —</option>'+meses.map(m=>{
+    const[y,mo]=m.split('-');
+    return `<option value="${m}"${m===mc?' selected':''}>${new Date(+y,+mo-1,1).toLocaleDateString('es-MX',{year:'numeric',month:'long'})}</option>`;
+  }).join('');
+}
+function aplicarMes(){
+  const mes=document.getElementById('f-mes').value; if(!mes)return;
+  const[y,m]=mes.split('-');const last=new Date(+y,+m,0).getDate();
+  document.getElementById('f-desde').value=`${mes}-01`;
+  document.getElementById('f-hasta').value=`${mes}-${String(last).padStart(2,'0')}`;
+  renderDashboard();
+}
+function limpiarFiltrosDash(){
+  ['f-ag','f-mes'].forEach(id=>document.getElementById(id).value='');
+  ['f-desde','f-hasta'].forEach(id=>document.getElementById(id).value='');
+  setBrandFilter('all');
+}
+
+// ── Dashboard de agencias ──────────────────────────────────────────────
+function renderTendencia(agId, desde, hasta){
+  if(chartTendencia) chartTendencia.destroy();
+
+  let regs = registros.filter(r=>{
+    if(agId && r.agenciaId!==agId) return false;
+    if(desde && r.fecha<desde) return false;
+    if(hasta && r.fecha>hasta) return false;
+    return true;
+  });
+
+  const fechas = [...new Set(regs.map(r=>r.fecha))].sort();
+
+  if(!fechas.length){
+    if(chartTendencia) chartTendencia.destroy();
+    return;
+  }
+
+  const natEnv = fechas.map(f=>regs.filter(r=>r.fecha===f&&r.marca==='natura').reduce((s,r)=>s+(+r.enviados||0),0));
+  const natEnt = fechas.map(f=>regs.filter(r=>r.fecha===f&&r.marca==='natura').reduce((s,r)=>s+(+r.entregados||0),0));
+  const shEnv  = fechas.map(f=>regs.filter(r=>r.fecha===f&&r.marca==='shein').reduce((s,r)=>s+(+r.enviados||0),0));
+  const shEnt  = fechas.map(f=>regs.filter(r=>r.fecha===f&&r.marca==='shein').reduce((s,r)=>s+(+r.entregados||0),0));
+
+  const labels = fechas.map(f=>{ const[y,m,d]=f.split('-'); return `${d}/${m}`; });
+
+  chartTendencia = new Chart(document.getElementById('chart-tendencia'),{
+    type:'bar',
+    data:{
+      labels,
+      datasets:[
+        {label:'Natura — Enviados',   data:natEnv, backgroundColor:'rgba(224,93,43,.85)',  borderRadius:4, borderSkipped:false},
+        {label:'Natura — Entregados', data:natEnt, backgroundColor:'rgba(244,125,82,.5)',  borderRadius:4, borderSkipped:false},
+        {label:'Shein — Enviados',    data:shEnv,  backgroundColor:'rgba(24,192,160,.85)', borderRadius:4, borderSkipped:false},
+        {label:'Shein — Entregados',  data:shEnt,  backgroundColor:'rgba(61,217,187,.5)',  borderRadius:4, borderSkipped:false},
+      ]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true,position:'top',labels:{color:'#8b92a8',font:{size:11},boxWidth:12,padding:14}},
+        tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('es-MX')}`}}
+      },
+      scales:{
+        x:{ticks:{color:'#555d73',font:{size:11}},grid:{color:'rgba(255,255,255,.04)'}},
+        y:{ticks:{color:'#555d73',font:{size:11}},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}
+      }
+    }
+  });
+}
+
+function populateDASelects(){
+  const sel=document.getElementById('da-ag'); const cur=sel.value;
+  sel.innerHTML='<option value="">Todas</option>'+agencias.map(a=>`<option value="${a.id}"${a.id===cur?' selected':''}>${a.nombre}</option>`).join('');
+  const meses=[...new Set(registros.map(r=>r.fecha.slice(0,7)))].sort().reverse();
+  const msel=document.getElementById('da-mes'); const mc=msel.value;
+  msel.innerHTML='<option value="">— Mes —</option>'+meses.map(m=>{
+    const[y,mo]=m.split('-');
+    return `<option value="${m}"${m===mc?' selected':''}>${new Date(+y,+mo-1,1).toLocaleDateString('es-MX',{year:'numeric',month:'long'})}</option>`;
+  }).join('');
+}
+function aplicarMesDA(){
+  const mes=document.getElementById('da-mes').value; if(!mes)return;
+  const[y,m]=mes.split('-');const last=new Date(+y,+m,0).getDate();
+  document.getElementById('da-desde').value=`${mes}-01`;
+  document.getElementById('da-hasta').value=`${mes}-${String(last).padStart(2,'0')}`;
+  renderDashAgencias();
+}
+function limpiarFiltrosDA(){
+  ['da-ag','da-marca','da-mes'].forEach(id=>document.getElementById(id).value='');
+  ['da-desde','da-hasta'].forEach(id=>document.getElementById(id).value='');
+  renderDashAgencias();
+}
+
+function renderDashAgencias(){
+  const agId=document.getElementById('da-ag').value;
+  const marca=document.getElementById('da-marca').value;
+  const desde=document.getElementById('da-desde').value;
+  const hasta=document.getElementById('da-hasta').value;
+
+  // Build resumen filtered by marca too
+  const resumen=agencias.map(ag=>{
+    let regs=registros.filter(r=>r.agenciaId===ag.id);
+    if(agId) regs=regs.filter(r=>r.agenciaId===agId);
+    if(desde) regs=regs.filter(r=>r.fecha>=desde);
+    if(hasta) regs=regs.filter(r=>r.fecha<=hasta);
+    if(marca) regs=regs.filter(r=>r.marca===marca);
+    const natR=regs.filter(r=>r.marca==='natura');
+    const shR=regs.filter(r=>r.marca==='shein');
+    const sum=arr=>({env:arr.reduce((s,r)=>s+(+r.enviados||0),0),rep:arr.reduce((s,r)=>s+(+r.reparto||0),0),ent:arr.reduce((s,r)=>s+(+r.entregados||0),0),fal:arr.reduce((s,r)=>s+(+r.fallidos||0),0)});
+    return {id:ag.id,nombre:ag.nombre,tot:sum(regs),nat:sum(natR),sh:sum(shR)};
+  }).filter(r=>agId?r.id===agId:true);
+
+  const tot=resumen.reduce((s,r)=>({env:s.env+r.tot.env,rep:s.rep+r.tot.rep,ent:s.ent+r.tot.ent,fal:s.fal+r.tot.fal}),{env:0,rep:0,ent:0,fal:0});
+
+  // Periodo label
+  if(desde||hasta){
+    document.getElementById('dash-periodo').textContent=(desde?'Desde '+desde:'')+(desde&&hasta?' — ':'')+(hasta?'Hasta '+hasta:'');
+  } else { document.getElementById('dash-periodo').textContent='Todos los periodos'; }
+
+  // Table
+  const tbody=document.getElementById('dash-tbody');
+  const rows=[];
+  resumen.forEach(r=>{
+    const show = marca||'all';
+    if(show==='all'||show==='natura'){
+      if(r.nat.env>0||show==='natura'){
+        const t2=tasa(r.nat.env,r.nat.ent);
+        const bc=t2>=80?'var(--green)':t2>=60?'var(--amber)':'var(--red)';
+        rows.push(`<tr><td style="font-weight:500">${r.nombre}</td><td><span class="badge badge-natura">Natura</span></td><td><span class="badge badge-blue mono">${r.nat.env}</span></td><td class="mono" style="color:var(--text2)">${r.nat.rep}</td><td class="mono" style="color:var(--green)">${r.nat.ent}</td><td class="mono" style="color:var(--red)">${r.nat.fal}</td><td><span class="badge ${t2>=80?'badge-green':t2>=60?'badge-amber':'badge-red'}">${t2}%</span><div class="progress-wrap"><div class="progress-bar" style="width:${t2}%;background:${bc}"></div></div></td></tr>`);
+      }
+    }
+    if(show==='all'||show==='shein'){
+      if(r.sh.env>0||show==='shein'){
+        const t2=tasa(r.sh.env,r.sh.ent);
+        const bc=t2>=80?'var(--green)':t2>=60?'var(--amber)':'var(--red)';
+        rows.push(`<tr><td style="font-weight:500">${r.nombre}</td><td><span class="badge badge-shein">Shein</span></td><td><span class="badge badge-blue mono">${r.sh.env}</span></td><td class="mono" style="color:var(--text2)">${r.sh.rep}</td><td class="mono" style="color:var(--green)">${r.sh.ent}</td><td class="mono" style="color:var(--red)">${r.sh.fal}</td><td><span class="badge ${t2>=80?'badge-green':t2>=60?'badge-amber':'badge-red'}">${t2}%</span><div class="progress-wrap"><div class="progress-bar" style="width:${t2}%;background:${bc}"></div></div></td></tr>`);
+      }
+    }
+  });
+  tbody.innerHTML=rows.length?rows.join(''):'<tr><td colspan="7" class="empty">Sin datos para los filtros seleccionados</td></tr>';
+
+  renderCharts(resumen, tot, marca||'all');
+}
+
+// ── Agencias ───────────────────────────────────────────────────────────
+function renderAgencias(){
+  const tbody=document.getElementById('ag-tbody');
+  if(!agencias.length){tbody.innerHTML='<tr><td colspan="8" class="empty">Sin agencias</td></tr>';return;}
+  tbody.innerHTML=agencias.map(ag=>{
+    const regs=registros.filter(r=>r.agenciaId===ag.id);
+    const nat=regs.filter(r=>r.marca==='natura');
+    const sh=regs.filter(r=>r.marca==='shein');
+    const nEnv=nat.reduce((s,r)=>s+(+r.enviados||0),0);
+    const nEnt=nat.reduce((s,r)=>s+(+r.entregados||0),0);
+    const sEnv=sh.reduce((s,r)=>s+(+r.enviados||0),0);
+    const sEnt=sh.reduce((s,r)=>s+(+r.entregados||0),0);
+    const tEnv=nEnv+sEnv; const tEnt=nEnt+sEnt; const t2=tasa(tEnv,tEnt);
+    return`<tr>
+      <td style="font-weight:500">${ag.nombre}</td>
+      <td style="color:var(--text2)">${ag.zona||'—'}</td>
+      <td class="mono" style="color:var(--natura-light)">${nEnv.toLocaleString('es-MX')}</td>
+      <td class="mono" style="color:var(--natura-light)">${nEnt.toLocaleString('es-MX')}</td>
+      <td class="mono" style="color:var(--shein-light)">${sEnv.toLocaleString('es-MX')}</td>
+      <td class="mono" style="color:var(--shein-light)">${sEnt.toLocaleString('es-MX')}</td>
+      <td><span class="badge ${t2>=80?'badge-green':t2>=60?'badge-amber':'badge-red'}">${t2}%</span></td>
+      <td>
+        <button class="row-btn" onclick="editarAg('${ag.id}')" title="Editar"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+        <button class="row-btn" onclick="confirmarEliminarAg('${ag.id}')" title="Eliminar"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+function guardarAgencia(){
+  const nombre=document.getElementById('ag-nombre').value.trim();
+  const zona=document.getElementById('ag-zona').value.trim();
+  if(!nombre){mostrarMsg('msg-agencias','El nombre es obligatorio','err');return;}
+  if(editAgId){const ag=agencias.find(a=>a.id===editAgId);if(ag){ag.nombre=nombre;ag.zona=zona;}editAgId=null;document.getElementById('form-ag-title').textContent='Nueva agencia';document.getElementById('btn-cancel-ag').style.display='none';}
+  else agencias.push({id:uid(),nombre,zona});
+  document.getElementById('ag-nombre').value='';document.getElementById('ag-zona').value='';
+  save();renderAgencias();populateRegSelects();populateDashSelects();
+  mostrarMsg('msg-agencias','Agencia guardada','ok');
+}
+function editarAg(id){const ag=agencias.find(a=>a.id===id);if(!ag)return;editAgId=id;document.getElementById('ag-nombre').value=ag.nombre;document.getElementById('ag-zona').value=ag.zona||'';document.getElementById('form-ag-title').textContent='Editar agencia';document.getElementById('btn-cancel-ag').style.display='inline-block';document.getElementById('ag-nombre').focus();}
+function cancelarAg(){editAgId=null;document.getElementById('ag-nombre').value='';document.getElementById('ag-zona').value='';document.getElementById('form-ag-title').textContent='Nueva agencia';document.getElementById('btn-cancel-ag').style.display='none';}
+function confirmarEliminarAg(id){
+  const ag=agencias.find(a=>a.id===id);if(!ag)return;
+  const cnt=registros.filter(r=>r.agenciaId===id).length;
+  openConfirm('Eliminar agencia',`¿Eliminar "${ag.nombre}"? Se eliminarán ${cnt} registro(s).`,()=>{agencias=agencias.filter(a=>a.id!==id);registros=registros.filter(r=>r.agenciaId!==id);save();renderAgencias();populateRegSelects();populateDashSelects();mostrarMsg('msg-agencias','Agencia eliminada','ok');});
+}
+
+// ── Registro ───────────────────────────────────────────────────────────
+function selBrand(b){
+  regBrand=b;
+  ['natura','shein'].forEach(x=>{
+    const el=document.getElementById('bopt-'+x);
+    el.className='brand-option '+x+(x===b?' selected':'');
+  });
+}
+function populateRegSelects(){
+  ['reg-ag','rf-ag'].forEach(id=>{
+    const sel=document.getElementById(id);if(!sel)return;
+    const cur=sel.value;
+    sel.innerHTML=(id==='rf-ag'?'<option value="">Todas</option>':'<option value="">— Selecciona —</option>')+agencias.map(a=>`<option value="${a.id}"${a.id===cur?' selected':''}>${a.nombre}</option>`).join('');
+  });
+}
+function renderRegistros(){
+  const agId=document.getElementById('rf-ag').value;
+  const marca=document.getElementById('rf-marca').value;
+  const desde=document.getElementById('rf-desde').value;
+  const hasta=document.getElementById('rf-hasta').value;
+  const filtrados=registros.filter(r=>{
+    if(agId&&r.agenciaId!==agId)return false;
+    if(marca&&r.marca!==marca)return false;
+    if(desde&&r.fecha<desde)return false;
+    if(hasta&&r.fecha>hasta)return false;
+    return true;
+  }).sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  const tbody=document.getElementById('reg-tbody');
+  if(!filtrados.length){tbody.innerHTML='<tr><td colspan="8" class="empty">Sin registros</td></tr>';return;}
+  tbody.innerHTML=filtrados.map(r=>{
+    const ag=agencias.find(a=>a.id===r.agenciaId);
+    const bCls=r.marca==='natura'?'badge-natura':'badge-shein';
+    return`<tr>
+      <td style="font-weight:500">${ag?.nombre||'—'}</td>
+      <td><span class="badge ${bCls}">${r.marca==='natura'?'Natura':'Shein'}</span></td>
+      <td class="mono" style="color:var(--text2)">${r.fecha}</td>
+      <td><span class="badge badge-blue mono">${r.enviados}</span></td>
+      <td class="mono" style="color:var(--text2)">${r.reparto}</td>
+      <td class="mono" style="color:var(--green)">${r.entregados}</td>
+      <td class="mono" style="color:var(--red)">${r.fallidos}</td>
+      <td>
+        <button class="row-btn" onclick="editarReg('${r.id}')" title="Editar"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+        <button class="row-btn" onclick="eliminarReg('${r.id}')" title="Eliminar"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+function guardarRegistro(){
+  const agId  = document.getElementById('reg-ag').value;
+  const fecha = document.getElementById('reg-fecha').value;
+  if(!agId){mostrarMsg('msg-registro','Selecciona una agencia','err');return;}
+  if(!fecha){mostrarMsg('msg-registro','La fecha es obligatoria','err');return;}
+  const natVals={enviados:+document.getElementById('reg-nat-env').value||0,reparto:+document.getElementById('reg-nat-rep').value||0,entregados:+document.getElementById('reg-nat-ent').value||0,fallidos:+document.getElementById('reg-nat-fal').value||0};
+  const shVals ={enviados:+document.getElementById('reg-sh-env').value||0, reparto:+document.getElementById('reg-sh-rep').value||0, entregados:+document.getElementById('reg-sh-ent').value||0, fallidos:+document.getElementById('reg-sh-fal').value||0};
+  if(editRegId){
+    const orig=registros.find(r=>r.id===editRegId);if(!orig)return;
+    const sibling=registros.find(r=>r.agenciaId===orig.agenciaId&&r.fecha===orig.fecha&&r.marca!==orig.marca&&r.id!==editRegId);
+    const natRec=orig.marca==='natura'?orig:sibling;
+    const shRec =orig.marca==='shein' ?orig:sibling;
+    if(natRec){const i=registros.findIndex(r=>r.id===natRec.id);if(i>=0)Object.assign(registros[i],{agenciaId:agId,fecha,...natVals});}
+    else if(natVals.enviados>0||natVals.entregados>0)registros.push({id:uid(),agenciaId:agId,fecha,marca:'natura',...natVals});
+    if(shRec){const i=registros.findIndex(r=>r.id===shRec.id);if(i>=0)Object.assign(registros[i],{agenciaId:agId,fecha,...shVals});}
+    else if(shVals.enviados>0||shVals.entregados>0)registros.push({id:uid(),agenciaId:agId,fecha,marca:'shein',...shVals});
+    editRegId=null;
+    document.getElementById('form-reg-title').textContent='Nuevo registro';
+    document.getElementById('btn-cancel-reg').style.display='none';
+  } else {
+    if(natVals.enviados>0||natVals.reparto>0||natVals.entregados>0||natVals.fallidos>0)
+      registros.push({id:uid(),agenciaId:agId,fecha,marca:'natura',...natVals});
+    if(shVals.enviados>0||shVals.reparto>0||shVals.entregados>0||shVals.fallidos>0)
+      registros.push({id:uid(),agenciaId:agId,fecha,marca:'shein',...shVals});
+  }
+  ['reg-nat-env','reg-nat-rep','reg-nat-ent','reg-nat-fal','reg-sh-env','reg-sh-rep','reg-sh-ent','reg-sh-fal'].forEach(id=>document.getElementById(id).value=0);
+  document.getElementById('reg-ag').value='';
+  save();renderRegistros();populateDashSelects();populatePagosSelects();
+  mostrarMsg('msg-registro','Registro guardado','ok');
+}
+// ── Edición combinada Natura + Shein ──────────────────────────────────
+let editModalIds = { nat: null, sh: null }; // ids of the two records being edited
+
+function editarReg(id){
+  const r = registros.find(x=>x.id===id); if(!r) return;
+  const sibling = registros.find(x=>x.agenciaId===r.agenciaId&&x.fecha===r.fecha&&x.marca!==r.marca&&x.id!==r.id);
+  const natRec = r.marca==='natura' ? r : sibling;
+  const shRec  = r.marca==='shein'  ? r : sibling;
+  editRegId = r.id;
+  // Populate main form
+  document.getElementById('reg-ag').value    = r.agenciaId;
+  document.getElementById('reg-fecha').value = r.fecha;
+  // Natura fields
+  document.getElementById('reg-nat-env').value = natRec?.enviados   || 0;
+  document.getElementById('reg-nat-rep').value = natRec?.reparto    || 0;
+  document.getElementById('reg-nat-ent').value = natRec?.entregados || 0;
+  document.getElementById('reg-nat-fal').value = natRec?.fallidos   || 0;
+  // Shein fields
+  document.getElementById('reg-sh-env').value  = shRec?.enviados   || 0;
+  document.getElementById('reg-sh-rep').value  = shRec?.reparto    || 0;
+  document.getElementById('reg-sh-ent').value  = shRec?.entregados || 0;
+  document.getElementById('reg-sh-fal').value  = shRec?.fallidos   || 0;
+  document.getElementById('form-reg-title').textContent='Editar registro';
+  document.getElementById('btn-cancel-reg').style.display='inline-block';
+  // Scroll to form
+  document.getElementById('view-registro').scrollIntoView({behavior:'smooth'});
+}
+
+function cancelarReg(){editRegId=null;['reg-nat-env','reg-nat-rep','reg-nat-ent','reg-nat-fal','reg-sh-env','reg-sh-rep','reg-sh-ent','reg-sh-fal'].forEach(id=>document.getElementById(id).value=0);document.getElementById('reg-ag').value='';document.getElementById('reg-fecha').value='';document.getElementById('form-reg-title').textContent='Nuevo registro';document.getElementById('btn-cancel-reg').style.display='none';}
+function eliminarReg(id){registros=registros.filter(r=>r.id!==id);save();renderRegistros();}
+function limpiarFiltrosReg(){['rf-ag','rf-marca','rf-desde','rf-hasta'].forEach(id=>document.getElementById(id).value='');renderRegistros();}
+
+// ── Pagos ──────────────────────────────────────────────────────────────
+let chartPagos = null;
+
+function populatePagosSelects(){
+  const meses=[...new Set(registros.map(r=>r.fecha.slice(0,7)))].sort().reverse();
+  const msel=document.getElementById('p-mes'); const mc=msel.value;
+  msel.innerHTML='<option value="">— Mes —</option>'+meses.map(m=>{
+    const[y,mo]=m.split('-');
+    return `<option value="${m}"${m===mc?' selected':''}>${new Date(+y,+mo-1,1).toLocaleDateString('es-MX',{year:'numeric',month:'long'})}</option>`;
+  }).join('');
+  const asel=document.getElementById('p-ag'); const ac=asel.value;
+  asel.innerHTML='<option value="">Todas</option>'+agencias.map(a=>`<option value="${a.id}"${a.id===ac?' selected':''}>${a.nombre}</option>`).join('');
+}
+
+function aplicarMesPagos(){
+  const mes=document.getElementById('p-mes').value; if(!mes)return;
+  const[y,m]=mes.split('-'); const last=new Date(+y,+m,0).getDate();
+  document.getElementById('p-desde').value=`${mes}-01`;
+  document.getElementById('p-hasta').value=`${mes}-${String(last).padStart(2,'0')}`;
+  renderPagos();
+}
+
+function limpiarFiltrosPagos(){
+  ['p-desde','p-hasta','p-mes','p-ag'].forEach(id=>document.getElementById(id).value='');
+  renderPagos();
+}
+
+function fmt(n){ return n.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+function renderPagos(){
+  const desde  = document.getElementById('p-desde').value;
+  const hasta  = document.getElementById('p-hasta').value;
+  const agId   = document.getElementById('p-ag').value;
+  const tNat   = parseFloat(document.getElementById('tarifa-natura').value)||0;
+  const tShein = parseFloat(document.getElementById('tarifa-shein').value)||0;
+
+  const pLabel = desde||hasta
+    ? (desde?'Desde '+desde:'')+(desde&&hasta?' — ':'')+(hasta?'Hasta '+hasta:'')
+    : 'Todos los periodos';
+  document.getElementById('pagos-periodo').textContent = pLabel;
+
+  // Filtrar agencias según selección
+  const agsFiltradas = agId ? agencias.filter(a=>a.id===agId) : agencias;
+
+  const filas = agsFiltradas.map(ag => {
+    let regs = registros.filter(r=>r.agenciaId===ag.id);
+    if(desde) regs=regs.filter(r=>r.fecha>=desde);
+    if(hasta)  regs=regs.filter(r=>r.fecha<=hasta);
+    const natEnt  = regs.filter(r=>r.marca==='natura').reduce((s,r)=>s+(+r.entregados||0),0);
+    const shEnt   = regs.filter(r=>r.marca==='shein').reduce((s,r)=>s+(+r.entregados||0),0);
+    const pagoNat  = natEnt * tNat;
+    const pagoSh   = shEnt  * tShein;
+    const total    = pagoNat + pagoSh;
+    return { nombre:ag.nombre, natEnt, shEnt, pagoNat, pagoSh, total };
+  });
+
+  const totNatEnt  = filas.reduce((s,f)=>s+f.natEnt,0);
+  const totShEnt   = filas.reduce((s,f)=>s+f.shEnt,0);
+  const totPagoNat = filas.reduce((s,f)=>s+f.pagoNat,0);
+  const totPagoSh  = filas.reduce((s,f)=>s+f.pagoSh,0);
+  const totTotal   = totPagoNat + totPagoSh;
+
+  document.getElementById('pagos-kpi').innerHTML=`
+    <div class="kpi-card" style="border:1px solid var(--border)">
+      <div class="kpi-label" style="color:var(--text3)">Pago total Natura</div>
+      <div class="kpi-value" style="color:var(--natura-light);font-size:22px">$${fmt(totPagoNat)}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px">${totNatEnt.toLocaleString('es-MX')} paquetes × $${tNat}</div>
+    </div>
+    <div class="kpi-card" style="border:1px solid var(--border)">
+      <div class="kpi-label" style="color:var(--text3)">Pago total Shein</div>
+      <div class="kpi-value" style="color:var(--shein-light);font-size:22px">$${fmt(totPagoSh)}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px">${totShEnt.toLocaleString('es-MX')} paquetes × $${tShein}</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label" style="color:var(--text3)">Total a pagar</div>
+      <div class="kpi-value" style="color:var(--green);font-size:22px">$${fmt(totTotal)}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px">${(totNatEnt+totShEnt).toLocaleString('es-MX')} paquetes entregados</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-label" style="color:var(--text3)">Agencias activas</div>
+      <div class="kpi-value" style="color:var(--blue);font-size:22px">${filas.filter(f=>f.total>0).length}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px">con entregas en el periodo</div>
+    </div>
+  `;
+
+  const tbody = document.getElementById('pagos-tbody');
+  if(!filas.some(f=>f.total>0)){
+    tbody.innerHTML='<tr><td colspan="6" class="empty">Sin entregas registradas en este periodo</td></tr>';
+  } else {
+    const sorted = [...filas].sort((a,b)=>b.total-a.total);
+    const maxTotal = Math.max(...filas.map(x=>x.total),1);
+    tbody.innerHTML = sorted.map(f=>`
+      <tr>
+        <td style="font-weight:500">${f.nombre}</td>
+        <td><span class="badge badge-natura mono">${f.natEnt.toLocaleString('es-MX')}</span></td>
+        <td><span class="badge badge-shein mono">${f.shEnt.toLocaleString('es-MX')}</span></td>
+        <td style="color:var(--natura-light);font-family:'DM Mono',monospace;font-weight:500">$${fmt(f.pagoNat)}</td>
+        <td style="color:var(--shein-light);font-family:'DM Mono',monospace;font-weight:500">$${fmt(f.pagoSh)}</td>
+        <td>
+          <span style="color:var(--green);font-family:'DM Mono',monospace;font-weight:600;font-size:14px">$${fmt(f.total)}</span>
+          ${f.total>0?`<div class="progress-wrap"><div class="progress-bar" style="width:${Math.round(f.total/maxTotal*100)}%;background:var(--green)"></div></div>`:''}
+        </td>
+      </tr>`).join('') +
+      `<tr style="border-top:2px solid var(--border2)">
+        <td style="font-weight:700;color:var(--text)">TOTAL</td>
+        <td><span class="badge badge-natura mono">${totNatEnt.toLocaleString('es-MX')}</span></td>
+        <td><span class="badge badge-shein mono">${totShEnt.toLocaleString('es-MX')}</span></td>
+        <td style="color:var(--natura-light);font-family:'DM Mono',monospace;font-weight:700">$${fmt(totPagoNat)}</td>
+        <td style="color:var(--shein-light);font-family:'DM Mono',monospace;font-weight:700">$${fmt(totPagoSh)}</td>
+        <td style="color:var(--green);font-family:'DM Mono',monospace;font-weight:700;font-size:15px">$${fmt(totTotal)}</td>
+      </tr>`;
+  }
+
+  if(chartPagos) chartPagos.destroy();
+  const active = filas.filter(f=>f.total>0);
+  chartPagos = new Chart(document.getElementById('chart-pagos'),{
+    type:'bar',
+    data:{
+      labels: active.map(f=>f.nombre.replace('Agencia ','')),
+      datasets:[
+        {label:'Natura',data:active.map(f=>f.pagoNat),backgroundColor:'rgba(224,93,43,.75)',borderRadius:4,borderSkipped:false},
+        {label:'Shein', data:active.map(f=>f.pagoSh), backgroundColor:'rgba(24,192,160,.75)',borderRadius:4,borderSkipped:false},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: $${fmt(ctx.parsed.y)}`}}},
+      scales:{
+        x:{ticks:{color:'#555d73',font:{size:11}},grid:{color:'rgba(255,255,255,.04)'}},
+        y:{ticks:{color:'#555d73',font:{size:11},callback:v=>'$'+v.toLocaleString('es-MX')},grid:{color:'rgba(255,255,255,.04)'}}
+      }
+    }
+  });
+}
+
+  // Periodo label
+// ── Inventario LPN ────────────────────────────────────────────────────
+function populateInvSelects(){
+  const asel=document.getElementById('inv-ag'); const ac=asel.value;
+  asel.innerHTML='<option value="">Todas</option>'+agencias.map(a=>`<option value="${a.id}"${a.id===ac?' selected':''}>${a.nombre}</option>`).join('');
+  const meses=[...new Set(lpns.map(l=>l.fecha.slice(0,7)))].sort().reverse();
+  const msel=document.getElementById('inv-mes'); const mc=msel.value;
+  msel.innerHTML='<option value="">— Mes —</option>'+meses.map(m=>{
+    const[y,mo]=m.split('-');
+    return`<option value="${m}"${m===mc?' selected':''}>${new Date(+y,+mo-1,1).toLocaleDateString('es-MX',{year:'numeric',month:'long'})}</option>`;
+  }).join('');
+}
+
+function aplicarMesInv(){
+  const mes=document.getElementById('inv-mes').value; if(!mes)return;
+  const[y,m]=mes.split('-'); const last=new Date(+y,+m,0).getDate();
+  document.getElementById('inv-desde').value=`${mes}-01`;
+  document.getElementById('inv-hasta').value=`${mes}-${String(last).padStart(2,'0')}`;
+  renderInventario();
+}
+
+function limpiarFiltrosInv(){
+  ['inv-ag','inv-marca','inv-desde','inv-hasta','inv-mes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('inv-buscar').value='';
+  renderInventario();
+}
+
+function renderInventario(){
+  const agId   = document.getElementById('inv-ag').value;
+  const marca  = document.getElementById('inv-marca').value;
+  const desde  = document.getElementById('inv-desde').value;
+  const hasta  = document.getElementById('inv-hasta').value;
+  const buscar = document.getElementById('inv-buscar').value.trim().toLowerCase();
+
+  let filtered = lpns.filter(l=>{
+    if(agId   && l.agenciaId!==agId) return false;
+    if(marca  && l.marca!==marca)    return false;
+    if(desde  && l.fecha<desde)      return false;
+    if(hasta  && l.fecha>hasta)      return false;
+    if(buscar && !l.lpn.toLowerCase().includes(buscar)) return false;
+    return true;
+  });
+
+  const totNat  = filtered.filter(l=>l.marca==='natura').length;
+  const totSh   = filtered.filter(l=>l.marca==='shein').length;
+  const agCount = [...new Set(filtered.map(l=>l.agenciaId))].length;
+
+  // KPIs
+  document.getElementById('inv-kpi').innerHTML=`
+    <div class="kpi-card blue"><div class="kpi-label" style="color:var(--text3)">Total LPN</div><div class="kpi-value" style="color:var(--blue)">${filtered.length.toLocaleString('es-MX')}</div></div>
+    <div class="kpi-card" style="border:1px solid var(--border)"><div class="kpi-label" style="color:var(--text3)">Natura</div><div class="kpi-value" style="color:var(--natura-light)">${totNat.toLocaleString('es-MX')}</div></div>
+    <div class="kpi-card" style="border:1px solid var(--border)"><div class="kpi-label" style="color:var(--text3)">Shein</div><div class="kpi-value" style="color:var(--shein-light)">${totSh.toLocaleString('es-MX')}</div></div>
+    <div class="kpi-card" style="border:1px solid var(--border)"><div class="kpi-label" style="color:var(--text3)">Agencias</div><div class="kpi-value" style="color:var(--purple)">${agCount}</div></div>
+  `;
+
+  if(!filtered.length){
+    document.getElementById('inv-grupos').innerHTML='<div class="empty" style="padding:40px;text-align:center;color:var(--text3)">Sin LPN para los filtros seleccionados</div>';
+    return;
+  }
+
+  // Agrupar por fecha + agencia
+  const grupos = {};
+  filtered.forEach(l=>{
+    const ag = agencias.find(a=>a.id===l.agenciaId);
+    const key = `${l.fecha}||${l.agenciaId}`;
+    if(!grupos[key]) grupos[key]={fecha:l.fecha,agencia:ag?.nombre||'—',agenciaId:l.agenciaId,lpns:[]};
+    grupos[key].lpns.push(l);
+  });
+
+  // Ordenar por fecha desc
+  const sorted = Object.values(grupos).sort((a,b)=>b.fecha.localeCompare(a.fecha)||a.agencia.localeCompare(b.agencia));
+
+  document.getElementById('inv-grupos').innerHTML = sorted.map(g=>{
+    const nat = g.lpns.filter(l=>l.marca==='natura');
+    const sh  = g.lpns.filter(l=>l.marca==='shein');
+    const lpnRows = g.lpns.map(l=>`
+      <tr>
+        <td style="font-family:'DM Mono',monospace;font-size:12px;color:${l.marca==='shein'?'var(--shein-light)':'var(--natura-light)'}">${l.lpn}</td>
+        <td><span class="badge ${l.marca==='shein'?'badge-shein':'badge-natura'}">${l.marca==='shein'?'Shein':'Natura'}</span></td>
+      </tr>`).join('');
+
+    return `<div class="table-card" style="margin-bottom:16px">
+      <div class="table-card-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-weight:600;color:var(--text);font-size:14px">${g.agencia}</span>
+          <span class="badge badge-natura">${nat.length} Natura</span>
+          <span class="badge badge-shein">${sh.length} Shein</span>
+          <span class="badge badge-blue">${g.lpns.length} total</span>
+        </div>
+        <span style="font-size:12px;color:var(--text3);font-family:'DM Mono',monospace">${g.fecha}</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th style="width:55%">LPN</th><th>Marca</th><th>Estatus</th></tr></thead>
+          <tbody>${g.lpns.map(l=>{
+            const est=l.estatus||'pendiente';
+            const estLabel=est==='entregado'?'Entregado':est==='en_ruta'?'En ruta':'Pendiente';
+            const estCls=est==='entregado'?'badge-green':est==='en_ruta'?'badge-amber':'badge-blue';
+            return`<tr>
+              <td style="font-family:'DM Mono',monospace;font-size:12px;color:${l.marca==='shein'?'var(--shein-light)':'var(--natura-light)'}">${l.lpn}</td>
+              <td><span class="badge ${l.marca==='shein'?'badge-shein':'badge-natura'}">${l.marca==='shein'?'Shein':'Natura'}</span></td>
+              <td><span class="badge ${estCls}">${estLabel}</span></td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Mensual ────────────────────────────────────────────────────────────
+function populateMensualSelects(){
+  const meses=[...new Set(registros.map(r=>r.fecha.slice(0,7)))].sort().reverse();
+  const msel=document.getElementById('m-mes');const mc=msel.value;
+  msel.innerHTML='<option value="">Todos</option>'+meses.map(m=>{const[y,mo]=m.split('-');return`<option value="${m}"${m===mc?' selected':''}>${new Date(+y,+mo-1,1).toLocaleDateString('es-MX',{year:'numeric',month:'long'})}</option>`;}).join('');
+  const asel=document.getElementById('m-ag');const ac=asel.value;
+  asel.innerHTML='<option value="">Todas</option>'+agencias.map(a=>`<option value="${a.id}"${a.id===ac?' selected':''}>${a.nombre}</option>`).join('');
+}
+function renderMensual(){
+  const mesF=document.getElementById('m-mes').value;
+  const agF=document.getElementById('m-ag').value;
+  const grid=document.getElementById('month-grid');
+  let meses=[...new Set(registros.map(r=>r.fecha.slice(0,7)))].sort().reverse();
+  if(mesF)meses=meses.filter(m=>m===mesF);
+  if(!meses.length){grid.innerHTML='<div class="empty" style="grid-column:1/-1">Sin registros para mostrar</div>';return;}
+  grid.innerHTML=meses.map(m=>{
+    const[y,mo]=m.split('-');
+    const lbl=new Date(+y,+mo-1,1).toLocaleDateString('es-MX',{year:'numeric',month:'long'});
+    let regs=registros.filter(r=>r.fecha.startsWith(m));
+    if(agF)regs=regs.filter(r=>r.agenciaId===agF);
+    const nat=regs.filter(r=>r.marca==='natura');
+    const sh=regs.filter(r=>r.marca==='shein');
+    const sum=arr=>({env:arr.reduce((s,r)=>s+(+r.enviados||0),0),rep:arr.reduce((s,r)=>s+(+r.reparto||0),0),ent:arr.reduce((s,r)=>s+(+r.entregados||0),0),fal:arr.reduce((s,r)=>s+(+r.fallidos||0),0)});
+    const ns=sum(nat),ss=sum(sh);
+    const tEnv=ns.env+ss.env,tEnt=ns.ent+ss.ent;
+    const t2=tasa(tEnv,tEnt);
+    const tColor=t2>=80?'var(--green)':t2>=60?'var(--amber)':'var(--red)';
+    return`<div class="month-card">
+      <div class="month-card-title">${lbl}<span class="badge ${t2>=80?'badge-green':t2>=60?'badge-amber':'badge-red'}">${t2}%</span></div>
+      <div class="month-brand-rows">
+        <div class="month-brand-block natura">
+          <div class="month-brand-label">Natura</div>
+          <div class="month-row"><span class="month-row-label">Enviados</span><span class="month-row-val">${ns.env.toLocaleString('es-MX')}</span></div>
+          <div class="month-row"><span class="month-row-label">Entregados</span><span class="month-row-val">${ns.ent.toLocaleString('es-MX')}</span></div>
+          <div class="month-row"><span class="month-row-label">Pendientes</span><span class="month-row-val">${ns.fal.toLocaleString('es-MX')}</span></div>
+        </div>
+        <div class="month-brand-block shein">
+          <div class="month-brand-label">Shein</div>
+          <div class="month-row"><span class="month-row-label">Enviados</span><span class="month-row-val">${ss.env.toLocaleString('es-MX')}</span></div>
+          <div class="month-row"><span class="month-row-label">Entregados</span><span class="month-row-val">${ss.ent.toLocaleString('es-MX')}</span></div>
+          <div class="month-row"><span class="month-row-label">Pendientes</span><span class="month-row-val">${ss.fal.toLocaleString('es-MX')}</span></div>
+        </div>
+      </div>
+      <div class="month-total-row"><span class="month-total-label">Total enviados</span><span class="month-total-val">${tEnv.toLocaleString('es-MX')}</span></div>
+      <div class="month-total-row"><span class="month-total-label">Total entregados</span><span class="month-total-val">${tEnt.toLocaleString('es-MX')}</span></div>
+      <div class="progress-wrap" style="margin-top:8px"><div class="progress-bar" style="width:${t2}%;background:${tColor}"></div></div>
+    </div>`;
+  }).join('');
+}
+
+// ── Importar tabs ──────────────────────────────────────────────────────
+function switchImportTab(t){
+  document.getElementById('iview-ruta').style.display   = t==='ruta'   ? 'block':'none';
+  document.getElementById('iview-status').style.display = t==='status' ? 'block':'none';
+  document.getElementById('iview-manual').style.display = t==='manual' ? 'block':'none';
+  document.getElementById('itab-ruta').classList.toggle('active',   t==='ruta');
+  document.getElementById('itab-status').classList.toggle('active', t==='status');
+  document.getElementById('itab-manual').classList.toggle('active', t==='manual');
+}
+
+// ── Actualizar estatus LPN ─────────────────────────────────────────────
+function clasificarEstatus(raw){
+  const s = (raw||'').toString().trim().toLowerCase();
+  if(s==='delivery_successful')   return 'entregado';
+  if(s==='order_out_for_delivery') return 'en_ruta';
+  return 'pendiente';
+}
+
+function handleStatusFile(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+
+      // Find header row with LPN and ESTATUS columns
+      let lpnCol=-1, statusCol=-1, dataStart=-1;
+      for(let i=0;i<Math.min(raw.length,15);i++){
+        const cols=raw[i].map(c=>String(c||'').trim().toLowerCase());
+        if(cols.some(c=>c==='lpn')&&cols.some(c=>c==='estatus'||c==='status')){
+          lpnCol    = cols.findIndex(c=>c==='lpn');
+          statusCol = cols.findIndex(c=>c==='estatus'||c==='status');
+          dataStart = i+1;
+          break;
+        }
+      }
+      if(lpnCol<0||statusCol<0){
+        mostrarMsg('msg-import','No se encontraron columnas LPN y ESTATUS en el archivo','err');
+        return;
+      }
+
+      // Process each row
+      let actualizados=0, nuevos=0, sinRegistro=0;
+      const conteos={entregado:0,en_ruta:0,pendiente:0};
+
+      for(let i=dataStart;i<raw.length;i++){
+        const lpnVal    = String(raw[i][lpnCol]||'').trim();
+        const statusRaw = String(raw[i][statusCol]||'').trim();
+        if(!lpnVal) continue;
+
+        const estatus = clasificarEstatus(statusRaw);
+        conteos[estatus]++;
+
+        // Find LPN in inventory
+        const lpnRec = lpns.find(l=>l.lpn.toLowerCase()===lpnVal.toLowerCase());
+        if(lpnRec){
+          lpnRec.estatus = estatus;
+          actualizados++;
+        } else {
+          sinRegistro++;
+        }
+      }
+
+      // Update registros counts based on LPN statuses per agencia+fecha+marca
+      // Group LPNs by agencia+fecha+marca and recount
+      agencias.forEach(ag=>{
+        const fechas=[...new Set(lpns.filter(l=>l.agenciaId===ag.id).map(l=>l.fecha))];
+        fechas.forEach(fecha=>{
+          ['natura','shein'].forEach(marca=>{
+            const grupo=lpns.filter(l=>l.agenciaId===ag.id&&l.fecha===fecha&&l.marca===marca);
+            if(!grupo.length) return;
+            const reg=registros.find(r=>r.agenciaId===ag.id&&r.fecha===fecha&&r.marca===marca);
+            if(reg){
+              reg.entregados = grupo.filter(l=>l.estatus==='entregado').length;
+              reg.reparto    = grupo.filter(l=>l.estatus==='en_ruta').length;
+              reg.fallidos   = grupo.filter(l=>l.estatus==='pendiente').length;
+            }
+          });
+        });
+      });
+
+      save();
+
+      document.getElementById('status-preview').innerHTML=`
+        <div class="alert alert-ok" style="margin-top:12px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          <strong>${actualizados}</strong> LPN actualizados · <strong>${sinRegistro}</strong> no encontrados en inventario
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px">
+          <div style="background:var(--green-bg);border:1px solid rgba(62,207,142,.2);border-radius:10px;padding:14px;text-align:center">
+            <div style="font-size:24px;font-weight:600;color:var(--green)">${conteos.entregado}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:4px">Entregados</div>
+          </div>
+          <div style="background:var(--amber-bg);border:1px solid rgba(245,166,35,.2);border-radius:10px;padding:14px;text-align:center">
+            <div style="font-size:24px;font-weight:600;color:var(--amber)">${conteos.en_ruta}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:4px">En ruta</div>
+          </div>
+          <div style="background:var(--blue-bg);border:1px solid rgba(74,158,255,.2);border-radius:10px;padding:14px;text-align:center">
+            <div style="font-size:24px;font-weight:600;color:var(--blue)">${conteos.pendiente}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:4px">Pendientes</div>
+          </div>
+        </div>`;
+
+      document.getElementById('file-status').value='';
+      renderDashboard();
+      updateSidebar();
+
+    }catch(err){mostrarMsg('msg-import','Error al leer: '+err.message,'err');}
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ── Importar Excel de RUTA ─────────────────────────────────────────────
+let rutaData=null;
+function parseExcelDate(rv){
+  const mmap={ene:'01',feb:'02',mar:'03',abr:'04',may:'05',jun:'06',jul:'07',ago:'08',sep:'09',oct:'10',nov:'11',dic:'12'};
+  if(typeof rv==='number'){
+    const d=new Date(Math.round((rv-25569)*86400*1000));
+    return d.toISOString().slice(0,10);
+  }
+  if(!rv) return '';
+  const s=String(rv).trim();
+  // dd/mm/yyyy or dd-mm-yyyy
+  const m2=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  if(m2){const yr=m2[3].length===2?'20'+m2[3]:m2[3];return`${yr}-${m2[2].padStart(2,'0')}-${m2[1].padStart(2,'0')}`;}
+  // d-mon-yy
+  const m1=s.match(/^(\d{1,2})[\/\-]([a-z]{3})[\/\-](\d{2,4})$/i);
+  if(m1){const yr=m1[3].length===2?'20'+m1[3]:m1[3];return`${yr}-${(mmap[m1[2].toLowerCase()]||'01')}-${m1[1].padStart(2,'0')}`;}
+  return new Date().toISOString().slice(0,10);
+}
+
+function handleRutaFile(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+
+      let lpnCol=-1, rutaCol=-1, fechaCol=-1, dataStartRow=-1;
+      let agenciaNombreUnico='', fechaStrUnico='';
+
+      // ── Detectar formato tabla (Ruta, FECHA, LPN en cabecera) ──────
+      for(let i=0;i<Math.min(raw.length,15);i++){
+        const row=raw[i];
+        const cols=row.map(c=>String(c||'').trim().toLowerCase());
+        if(cols.some(c=>c==='lpn')&&cols.some(c=>c==='ruta')){
+          rutaCol  = cols.findIndex(c=>c==='ruta');
+          lpnCol   = cols.findIndex(c=>c==='lpn');
+          fechaCol = cols.findIndex(c=>c==='fecha');
+          dataStartRow=i+1;
+          break;
+        }
+      }
+
+      // ── Detectar formato ficha (Ruta: | NOMBRE en filas separadas) ─
+      if(dataStartRow<0){
+        for(let i=0;i<raw.length;i++){
+          const row=raw[i];
+          const a=String(row[0]||'').trim().toLowerCase();
+          if((a==='ruta'||a==='ruta:')&&!agenciaNombreUnico)
+            agenciaNombreUnico=String(row[1]||'').trim();
+          if((a==='fecha'||a==='fecha:')&&!fechaStrUnico)
+            fechaStrUnico=parseExcelDate(row[1]);
+          if(dataStartRow<0&&row.some(c=>String(c).trim().toUpperCase()==='LPN')){
+            lpnCol=row.findIndex(c=>String(c).trim().toUpperCase()==='LPN');
+            dataStartRow=i+1;
+          }
+        }
+      }
+
+      if(dataStartRow<0||lpnCol<0){
+        mostrarMsg('msg-import','No se encontró la columna LPN en el archivo','err');return;
+      }
+
+      // ── Agrupar LPN por agencia ────────────────────────────────────
+      // Map: agenciaNombre → { fecha, lpns: [] }
+      const grupos = {};
+
+      for(let i=dataStartRow;i<raw.length;i++){
+        const row=raw[i];
+        const lpn=String(row[lpnCol]||'').trim();
+        if(!lpn) continue;
+
+        // Nombre agencia
+        let agNombre = agenciaNombreUnico; // modo ficha
+        if(rutaCol>=0){
+          const rv=String(row[rutaCol]||'').trim();
+          if(rv) agNombre=rv;
+        }
+        if(!agNombre) continue;
+
+        // Fecha
+        let fecha = fechaStrUnico;
+        if(fechaCol>=0&&row[fechaCol]) fecha=parseExcelDate(row[fechaCol]);
+        if(!fecha) fecha=new Date().toISOString().slice(0,10);
+
+        if(!grupos[agNombre]) grupos[agNombre]={fecha, lpns:[]};
+        grupos[agNombre].lpns.push(lpn);
+      }
+
+      const agNames=Object.keys(grupos);
+      if(!agNames.length){
+        mostrarMsg('msg-import','No se encontraron datos de agencias en el archivo','err');return;
+      }
+
+      // ── Contar por marca ───────────────────────────────────────────
+      const resumen = agNames.map(nombre=>{
+        const {fecha,lpns}=grupos[nombre];
+        const shein  = lpns.filter(l=>l.toLowerCase().startsWith('c')).length;
+        const natura = lpns.length - shein;
+        return {nombre,fecha,natura,shein,total:lpns.length};
+      });
+
+      rutaData={multi:true, resumen, rawGrupos: Object.fromEntries(Object.entries(grupos).map(([k,v])=>[k,v.lpns]))};
+
+      // Preview tabla
+      const rows=resumen.map(r=>`
+        <tr>
+          <td style="font-weight:500">${r.nombre}</td>
+          <td class="mono" style="color:var(--text2)">${r.fecha}</td>
+          <td><span class="badge badge-blue mono">${r.total}</span></td>
+          <td><span class="badge badge-natura mono">${r.natura}</span></td>
+          <td><span class="badge badge-shein mono">${r.shein}</span></td>
+        </tr>`).join('');
+      const totTotal=resumen.reduce((s,r)=>s+r.total,0);
+      const totNat=resumen.reduce((s,r)=>s+r.natura,0);
+      const totSh=resumen.reduce((s,r)=>s+r.shein,0);
+
+      document.getElementById('ruta-preview').innerHTML=`
+        <div class="alert alert-ok" style="margin-top:12px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          <strong>${agNames.length} agencias</strong> detectadas — <strong>${totTotal}</strong> LPN totales
+          (<span style="color:var(--natura-light)">${totNat} Natura</span> · <span style="color:var(--shein-light)">${totSh} Shein</span>)
+        </div>
+        <div class="table-card" style="margin-top:12px;margin-bottom:12px">
+          <div class="table-card-header"><span class="table-card-title">Vista previa por agencia</span></div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Agencia</th><th>Fecha</th><th>Total LPN</th><th>Natura</th><th>Shein</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table></div>
+        </div>`;
+
+      // Mostrar formulario de complemento multi-agencia
+      document.getElementById('ruta-resumen-detected').innerHTML=`
+        <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Agencias</div><div style="font-size:20px;font-weight:600;color:var(--blue)">${agNames.length}</div></div>
+        <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Total LPN</div><div style="font-size:20px;font-weight:600;color:var(--text)">${totTotal}</div></div>
+        <div><div style="font-size:10px;color:var(--natura-light);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Natura</div><div style="font-size:20px;font-weight:600;color:var(--natura-light)">${totNat}</div></div>
+        <div><div style="font-size:10px;color:var(--shein-light);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Shein</div><div style="font-size:20px;font-weight:600;color:var(--shein-light)">${totSh}</div></div>`;
+
+      // Generar formulario dinámico por agencia — campos separados por marca
+      const formRows = resumen.map((r,idx)=>`
+        <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:12px">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span>${r.nombre}</span>
+            <span class="badge badge-natura">${r.natura} Natura</span>
+            <span class="badge badge-shein">${r.shein} Shein</span>
+            <span style="font-size:11px;color:var(--text3);margin-left:auto">${r.fecha}</span>
+          </div>
+          ${r.natura>0?`
+          <div style="background:var(--natura-bg);border:1px solid rgba(224,93,43,.2);border-radius:8px;padding:10px;margin-bottom:8px">
+            <div style="font-size:10px;font-weight:600;color:var(--natura-light);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;display:flex;align-items:center;gap:5px"><div class="brand-dot natura"></div>Natura — ${r.natura} enviados</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+              <div class="form-group"><label style="color:var(--amber)">En reparto</label><input type="number" id="mn-rep-${idx}" min="0" value="0"></div>
+              <div class="form-group"><label style="color:var(--green)">Entregados</label><input type="number" id="mn-ent-${idx}" min="0" value="0"></div>
+              <div class="form-group"><label style="color:var(--red)">Pendientes</label><input type="number" id="mn-fal-${idx}" min="0" value="0"></div>
+            </div>
+          </div>`:''}
+          ${r.shein>0?`
+          <div style="background:var(--shein-bg);border:1px solid rgba(24,192,160,.2);border-radius:8px;padding:10px">
+            <div style="font-size:10px;font-weight:600;color:var(--shein-light);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;display:flex;align-items:center;gap:5px"><div class="brand-dot shein"></div>Shein — ${r.shein} enviados</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+              <div class="form-group"><label style="color:var(--amber)">En reparto</label><input type="number" id="ms-rep-${idx}" min="0" value="0"></div>
+              <div class="form-group"><label style="color:var(--green)">Entregados</label><input type="number" id="ms-ent-${idx}" min="0" value="0"></div>
+              <div class="form-group"><label style="color:var(--red)">Pendientes</label><input type="number" id="ms-fal-${idx}" min="0" value="0"></div>
+            </div>
+          </div>`:''}
+        </div>`).join('');
+
+      // Reemplazar secciones natura/shein con formulario multi
+      document.getElementById('ruta-natura-section').style.display='none';
+      document.getElementById('ruta-shein-section').style.display='none';
+
+      // Insertar formulario dinámico antes del btn-row
+      let fc=document.getElementById('ruta-form-card');
+      let existing=document.getElementById('multi-form-rows');
+      if(existing) existing.remove();
+      const div=document.createElement('div');
+      div.id='multi-form-rows';
+      div.innerHTML=`<p style="font-size:12px;color:var(--text3);margin-bottom:12px">Captura los datos de entrega para cada agencia:</p>${formRows}`;
+      fc.querySelector('.btn-row').before(div);
+      fc.style.display='block';
+
+    }catch(err){mostrarMsg('msg-import','Error al leer: '+err.message,'err');}
+  };
+  reader.readAsArrayBuffer(file);
+}
+function guardarDesdeRuta(){
+  if(!rutaData){mostrarMsg('msg-import','No hay archivo cargado','err');return;}
+
+  if(rutaData.multi){
+    const {resumen, rawGrupos}=rutaData;
+    resumen.forEach((r,idx)=>{
+      let ag=agencias.find(a=>a.nombre.toLowerCase()===r.nombre.toLowerCase());
+      if(!ag){ag={id:uid(),nombre:r.nombre,zona:''};agencias.push(ag);}
+      // Guardar LPNs en inventario
+      if(rawGrupos&&rawGrupos[r.nombre]){
+        rawGrupos[r.nombre].forEach(lpn=>{
+          // Evitar duplicados (mismo LPN + fecha)
+          const existe=lpns.find(l=>l.lpn===lpn&&l.fecha===r.fecha);
+          if(!existe){
+            const marca=lpn.toLowerCase().startsWith('c')?'shein':'natura';
+            lpns.push({id:uid(),lpn,agenciaId:ag.id,fecha:r.fecha,marca});
+          }
+        });
+      }
+      // Natura — campos independientes
+      if(r.natura>0) registros.push({
+        id:uid(),agenciaId:ag.id,fecha:r.fecha,marca:'natura',enviados:r.natura,
+        reparto:    +document.getElementById(`mn-rep-${idx}`)?.value||0,
+        entregados: +document.getElementById(`mn-ent-${idx}`)?.value||0,
+        fallidos:   +document.getElementById(`mn-fal-${idx}`)?.value||0,
+      });
+      // Shein — campos independientes
+      if(r.shein>0) registros.push({
+        id:uid(),agenciaId:ag.id,fecha:r.fecha,marca:'shein',enviados:r.shein,
+        reparto:    +document.getElementById(`ms-rep-${idx}`)?.value||0,
+        entregados: +document.getElementById(`ms-ent-${idx}`)?.value||0,
+        fallidos:   +document.getElementById(`ms-fal-${idx}`)?.value||0,
+      });
+    });
+    save();populateRegSelects();populateDashSelects();populatePagosSelects();
+    cancelarRuta();
+    mostrarMsg('msg-import',`✓ ${resumen.length} agencias importadas correctamente`,'ok');
+  } else {
+    // ── Modo agencia única ─────────────────────────────────────────
+    const{agenciaNombre,fecha,natCount,sheinCount}=rutaData;
+    let ag=agencias.find(a=>a.nombre.toLowerCase()===agenciaNombre.toLowerCase());
+    if(!ag){ag={id:uid(),nombre:agenciaNombre,zona:''};agencias.push(ag);}
+    if(natCount>0) registros.push({id:uid(),agenciaId:ag.id,fecha,marca:'natura',enviados:natCount,reparto:+document.getElementById('rn-rep').value||0,entregados:+document.getElementById('rn-ent').value||0,fallidos:+document.getElementById('rn-fal').value||0});
+    if(sheinCount>0) registros.push({id:uid(),agenciaId:ag.id,fecha,marca:'shein',enviados:sheinCount,reparto:+document.getElementById('rs-rep').value||0,entregados:+document.getElementById('rs-ent').value||0,fallidos:+document.getElementById('rs-fal').value||0});
+    save();populateRegSelects();populateDashSelects();populatePagosSelects();
+    cancelarRuta();
+    mostrarMsg('msg-import',`✓ ${agenciaNombre} (${fecha}) · ${natCount} Natura · ${sheinCount} Shein`,'ok');
+  }
+}
+function cancelarRuta(){
+  rutaData=null;
+  document.getElementById('ruta-preview').innerHTML='';
+  document.getElementById('ruta-form-card').style.display='none';
+  document.getElementById('ruta-natura-section').style.display='block';
+  document.getElementById('ruta-shein-section').style.display='block';
+  const mf=document.getElementById('multi-form-rows');
+  if(mf) mf.remove();
+  document.getElementById('file-ruta').value='';
+}
+
+// ── Importar plantilla manual ──────────────────────────────────────────
+let previewRows=[];
+function handleFile(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=async e=>{
+    try{
+      let rows=[];
+      if(file.name.endsWith('.csv')){
+        const text=new TextDecoder().decode(e.target.result);
+        const lines=text.split(/\r?\n/).filter(l=>l.trim());
+        const headers=lines[0].split(/[,;]/).map(h=>h.trim().toLowerCase());
+        rows=lines.slice(1).map(l=>{const vals=l.split(/[,;]/);const obj={};headers.forEach((h,i)=>obj[h]=(vals[i]||'').trim());return obj;});
+      } else {
+        const wb=XLSX.read(e.target.result,{type:'array'});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        rows=XLSX.utils.sheet_to_json(ws,{defval:0});
+        rows=rows.map(r=>{const n={};Object.keys(r).forEach(k=>n[k.toLowerCase().trim()]=r[k]);return n;});
+      }
+      const cols=['agencia','marca','enviados','reparto','entregados','fallidos'];
+      const falt=cols.filter(c=>!Object.keys(rows[0]||{}).includes(c));
+      if(falt.length){mostrarMsg('msg-import','Columnas faltantes: '+falt.join(', '),'err');return;}
+      const invalidas=rows.filter(r=>!['natura','shein'].includes((r.marca||'').toLowerCase().trim()));
+      if(invalidas.length){mostrarMsg('msg-import',`${invalidas.length} fila(s) con marca inválida (usa "natura" o "shein")`,'err');return;}
+      previewRows=rows;
+      document.getElementById('preview-area').innerHTML=`
+        <div class="alert alert-info"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>${rows.length} filas encontradas. Revisa y confirma.</div>
+        <div class="table-card" style="margin-bottom:12px"><div class="table-wrap"><table>
+          <thead><tr><th>Agencia</th><th>Marca</th><th>Enviados</th><th>Reparto</th><th>Entregados</th><th>Pendientes</th></tr></thead>
+          <tbody>${rows.slice(0,6).map(r=>`<tr><td>${r.agencia}</td><td><span class="badge ${r.marca.toLowerCase()==='natura'?'badge-natura':'badge-shein'}">${r.marca}</span></td><td class="mono">${r.enviados}</td><td class="mono">${r.reparto}</td><td class="mono">${r.entregados}</td><td class="mono">${r.fallidos}</td></tr>`).join('')}
+          ${rows.length>6?`<tr><td colspan="6" style="color:var(--text3);font-size:11px;text-align:center">… y ${rows.length-6} más</td></tr>`:''}</tbody>
+        </table></div></div>
+        <div class="btn-row"><button class="btn-primary" onclick="confirmarImport()">Importar todos</button><button class="btn-secondary" onclick="cancelarImport()">Cancelar</button></div>`;
+    }catch(err){mostrarMsg('msg-import','Error al leer: '+err.message,'err');}
+  };
+  reader.readAsArrayBuffer(file);
+}
+async function confirmarImport(){
+  const hoy=new Date().toISOString().slice(0,10);let creadas=0;
+  for(const row of previewRows){
+    const nombre=(row.agencia||'').trim();if(!nombre)continue;
+    const marca=(row.marca||'').toLowerCase().trim();
+    let ag=agencias.find(a=>a.nombre.toLowerCase()===nombre.toLowerCase());
+    if(!ag){ag={id:uid(),nombre,zona:''};agencias.push(ag);creadas++;}
+    registros.push({id:uid(),agenciaId:ag.id,fecha:hoy,marca,enviados:+row.enviados||0,reparto:+row.reparto||0,entregados:+row.entregados||0,fallidos:+row.fallidos||0});
+  }
+  save();cancelarImport();populateRegSelects();populateDashSelects();
+  mostrarMsg('msg-import',`Importados ${previewRows.length} registros${creadas?` · ${creadas} agencias nuevas`:'`'}. Natura y Shein diferenciados.`,'ok');
+  previewRows=[];
+}
+function cancelarImport(){document.getElementById('preview-area').innerHTML='';document.getElementById('file-in').value='';}
+
+// ── Confirm ────────────────────────────────────────────────────────────
+function openConfirm(title,msg,cb){document.getElementById('confirm-title').textContent=title;document.getElementById('confirm-msg').textContent=msg;document.getElementById('confirm-overlay').classList.add('open');document.getElementById('confirm-ok').onclick=()=>{cb();closeConfirm();};}
+function closeConfirm(){document.getElementById('confirm-overlay').classList.remove('open');}
+
+// ── Helpers ────────────────────────────────────────────────────────────
+function mostrarMsg(id,texto,tipo){
+  const el=document.getElementById(id);
+  el.innerHTML=`<div class="alert alert-${tipo==='ok'?'ok':tipo==='err'?'err':'info'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${tipo==='ok'?'<polyline points="20 6 9 17 4 12"/>':tipo==='err'?'<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>':'<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>'}</svg>${texto}</div>`;
+  setTimeout(()=>el.innerHTML='',4500);
+}
+function updateSidebar(){
+  document.getElementById('sb-ag').textContent=agencias.length;
+  document.getElementById('sb-reg').textContent=registros.length;
+  document.getElementById('sb-natura').textContent=registros.filter(r=>r.marca==='natura').reduce((s,r)=>s+(+r.enviados||0),0).toLocaleString('es-MX');
+  document.getElementById('sb-shein').textContent=registros.filter(r=>r.marca==='shein').reduce((s,r)=>s+(+r.enviados||0),0).toLocaleString('es-MX');
+  document.getElementById('sb-lpn').textContent=lpns.length.toLocaleString('es-MX');
+}
+
+// ── Init ───────────────────────────────────────────────────────────────
+document.getElementById('topbar-date').textContent=new Date().toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+async function loadFromAPI(){
+  try{
+    const res=await fetch('/api/data',{cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    agencias  = data.agencias  || [];
+    registros = data.registros || [];
+    lpns      = data.lpns      || [];
+    if(chartBar){chartBar.destroy();chartBar=null;}
+    if(chartDona){chartDona.destroy();chartDona=null;}
+    if(chartTendencia){chartTendencia.destroy();chartTendencia=null;}
+    if(typeof chartPagos!=='undefined'&&chartPagos){chartPagos.destroy();chartPagos=null;}
+    populateDashSelects();
+    populateDASelects();
+    populatePagosSelects();
+    populateMensualSelects();
+    populateInvSelects();
+    updateSidebar();
+    renderDashboard();
+    const now=new Date().toLocaleTimeString('es-MX');
+    document.getElementById('last-sync').textContent='Última actualización: '+now;
+  }catch(e){
+    document.getElementById('last-sync').textContent='Sin conexión — reintentando...';
+    setTimeout(loadFromAPI, 5000);
+  }
+}
+loadFromAPI();
+setInterval(loadFromAPI, 30000);
+</script>
+</body>
+</html>
