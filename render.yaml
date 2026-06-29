@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: analisis-agencias
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: WRITE_TOKEN
+        value: movicarga2026
+      - key: SUPABASE_URL
+        value: https://ivsyqudhtcbjvbgkookv.supabase.co
+      - key: SUPABASE_KEY
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml2c3lxdWRodGNianZiZ2tvb2t2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzOTM1ODksImV4cCI6MjA5Nzk2OTU4OX0.jqDbUEQRBTc9dSOAWZGCbTjMH0574IMvOlZ1NUAINpM
